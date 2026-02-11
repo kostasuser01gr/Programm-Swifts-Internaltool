@@ -1,4 +1,4 @@
-import { Grid3x3, Kanban, Calendar, Image, Filter, SortAsc, Group, Share2, Download, ChevronDown, Plus, BarChart3, FileText } from 'lucide-react';
+import { Grid3x3, Kanban, Calendar, Image, Filter, SortAsc, Group, Share2, Download, ChevronDown, Plus, BarChart3, FileText, Search, Undo2, Redo2, FileInput, Settings2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { View, ViewType } from '../../types';
@@ -15,6 +15,13 @@ interface ViewToolbarProps {
   filterCount: number;
   sortCount: number;
   groupCount: number;
+  onSearchClick?: () => void;
+  onUndoClick?: () => void;
+  onRedoClick?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onImportExportClick?: () => void;
+  onFieldEditorClick?: () => void;
 }
 
 const viewIcons: Record<ViewType, any> = {
@@ -38,6 +45,13 @@ export function ViewToolbar({
   filterCount,
   sortCount,
   groupCount,
+  onSearchClick,
+  onUndoClick,
+  onRedoClick,
+  canUndo = false,
+  canRedo = false,
+  onImportExportClick,
+  onFieldEditorClick,
 }: ViewToolbarProps) {
   const CurrentViewIcon = viewIcons[currentView.type] || Grid3x3;
 
@@ -118,23 +132,43 @@ export function ViewToolbar({
       </div>
 
       <div className="flex items-center gap-2">
+        {onSearchClick && (
+          <Button variant="ghost" size="sm" onClick={onSearchClick} title="Search (⌘K)">
+            <Search className="w-4 h-4 mr-1.5" />
+            <span className="text-xs text-gray-400">⌘K</span>
+          </Button>
+        )}
+
+        {onUndoClick && (
+          <Button variant="ghost" size="sm" onClick={onUndoClick} disabled={!canUndo} title="Undo (⌘Z)">
+            <Undo2 className="w-4 h-4" />
+          </Button>
+        )}
+        {onRedoClick && (
+          <Button variant="ghost" size="sm" onClick={onRedoClick} disabled={!canRedo} title="Redo (⌘⇧Z)">
+            <Redo2 className="w-4 h-4" />
+          </Button>
+        )}
+
+        <Separator orientation="vertical" className="h-6" />
+
+        {onFieldEditorClick && (
+          <Button variant="ghost" size="sm" onClick={onFieldEditorClick}>
+            <Settings2 className="w-4 h-4 mr-1.5" />
+            Fields
+          </Button>
+        )}
+
+        {onImportExportClick && (
+          <Button variant="ghost" size="sm" onClick={onImportExportClick}>
+            <FileInput className="w-4 h-4 mr-1.5" />
+            Import / Export
+          </Button>
+        )}
+
         <Button variant="ghost" size="sm" onClick={onShareClick}>
           <Share2 className="w-4 h-4 mr-1.5" />
           Share
-        </Button>
-        
-        <Button variant="ghost" size="sm" onClick={() => {
-          const data = JSON.stringify({ view: currentView.name, exportedAt: new Date().toISOString() });
-          const blob = new Blob([data], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${currentView.name}-export.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-        }}>
-          <Download className="w-4 h-4 mr-1.5" />
-          Export
         </Button>
 
         <Separator orientation="vertical" className="h-6" />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Search, Settings, Users, Database, Zap, BarChart, Bot, Moon, Sun } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Search, Settings, Users, Database, Zap, BarChart, Bot, Moon, Sun, Bell, FileInput } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
@@ -16,6 +16,10 @@ interface SidebarProps {
   onAIAssistantToggle: () => void;
   onDarkModeToggle?: () => void;
   isDarkMode?: boolean;
+  onNotificationsToggle?: () => void;
+  unreadNotifications?: number;
+  onAnalyticsToggle?: () => void;
+  onAutomationsToggle?: () => void;
 }
 
 export function Sidebar({
@@ -27,6 +31,10 @@ export function Sidebar({
   onAIAssistantToggle,
   onDarkModeToggle,
   isDarkMode,
+  onNotificationsToggle,
+  unreadNotifications = 0,
+  onAnalyticsToggle,
+  onAutomationsToggle,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBases, setExpandedBases] = useState<Set<string>>(
@@ -101,14 +109,24 @@ export function Sidebar({
             </span>
           </Button>
           
-          <Button variant="ghost" className="w-full justify-start text-sm mb-1" onClick={() => toast.info('Automation builder coming soon...')}>
+          <Button variant="ghost" className="w-full justify-start text-sm mb-1" onClick={onAutomationsToggle ?? (() => toast.info('Automation builder coming soon...'))}>
             <Zap className="w-4 h-4 mr-2" />
             Automations
           </Button>
 
-          <Button variant="ghost" className="w-full justify-start text-sm mb-1" onClick={() => toast.info('Analytics dashboard coming soon...')}>
+          <Button variant="ghost" className="w-full justify-start text-sm mb-1" onClick={onAnalyticsToggle ?? (() => toast.info('Analytics dashboard coming soon...'))}>
             <BarChart className="w-4 h-4 mr-2" />
             Analytics
+          </Button>
+
+          <Button variant="ghost" className="w-full justify-start text-sm mb-1 relative" onClick={onNotificationsToggle ?? (() => toast.info('Notifications coming soon...'))}>
+            <Bell className="w-4 h-4 mr-2" />
+            Notifications
+            {unreadNotifications > 0 && (
+              <span className="ml-auto text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                {unreadNotifications}
+              </span>
+            )}
           </Button>
 
           <Button variant="ghost" className="w-full justify-start text-sm mb-1" onClick={() => toast.info(`${workspace.members.length} members in workspace`)}>

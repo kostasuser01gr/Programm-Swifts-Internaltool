@@ -1,4 +1,4 @@
-import { Workspace, Base, Table, Field, Record, View, Automation } from '../types';
+import { Workspace, Base, Table, Field, Record, View, Automation, Notification, Comment } from '../types';
 
 // Mock data for demonstration
 export const mockWorkspace: Workspace = {
@@ -11,18 +11,24 @@ export const mockWorkspace: Workspace = {
       email: 'john@acme.com',
       name: 'John Smith',
       role: 'owner',
+      status: 'active',
+      lastActive: new Date().toISOString(),
     },
     {
       id: 'user-2',
       email: 'sarah@acme.com',
       name: 'Sarah Johnson',
       role: 'admin',
+      status: 'active',
+      lastActive: new Date(Date.now() - 3600000).toISOString(),
     },
     {
       id: 'user-3',
       email: 'mike@acme.com',
       name: 'Mike Chen',
       role: 'editor',
+      status: 'active',
+      lastActive: new Date(Date.now() - 7200000).toISOString(),
     },
   ],
 };
@@ -312,61 +318,168 @@ export const mockViews: View[] = [
     hiddenFields: [],
     fieldOrder: ['fld-1', 'fld-2', 'fld-3', 'fld-4', 'fld-5', 'fld-6'],
   },
+  {
+    id: 'view-5',
+    name: 'Gallery',
+    type: 'gallery',
+    tableId: 'table-1',
+    filters: [],
+    sorts: [{ fieldId: 'fld-4', direction: 'desc' }],
+    hiddenFields: [],
+    fieldOrder: ['fld-1', 'fld-2', 'fld-3', 'fld-4', 'fld-5', 'fld-6', 'fld-7'],
+    config: {
+      titleFieldId: 'fld-1',
+      cardSize: 'medium',
+    },
+  },
+  {
+    id: 'view-6',
+    name: 'Timeline',
+    type: 'timeline',
+    tableId: 'table-1',
+    filters: [],
+    sorts: [{ fieldId: 'fld-5', direction: 'asc' }],
+    hiddenFields: [],
+    fieldOrder: ['fld-1', 'fld-2', 'fld-3', 'fld-5'],
+    config: {
+      startDateFieldId: 'fld-5',
+    },
+  },
+  {
+    id: 'view-7',
+    name: 'Submit Form',
+    type: 'form',
+    tableId: 'table-1',
+    filters: [],
+    sorts: [],
+    hiddenFields: [],
+    fieldOrder: ['fld-1', 'fld-2', 'fld-3', 'fld-4', 'fld-5', 'fld-6', 'fld-7', 'fld-9'],
+    config: {
+      formDescription: 'Submit a new task for the product development team.',
+      formSubmitLabel: 'Submit Task',
+    },
+  },
 ];
 
 export const mockAutomations: Automation[] = [
   {
     id: 'auto-1',
     name: 'Notify on high priority tasks',
-    tableId: 'table-1',
     enabled: true,
     trigger: {
-      type: 'recordCreated',
+      type: 'record_created',
+      config: {},
     },
-    conditions: [
-      {
-        id: 'cond-1',
-        fieldId: 'fld-4',
-        operator: 'equals',
-        value: 'pri-4',
-      },
-    ],
     actions: [
       {
-        type: 'sendNotification',
+        type: 'send_email',
         config: {
           recipients: ['user-1', 'user-2'],
           message: 'New urgent task created: {Task Name}',
         },
       },
     ],
+    createdAt: '2026-01-15T10:00:00Z',
+    lastModifiedAt: '2026-02-01T14:30:00Z',
+    description: 'Sends email when a new high-priority task is created',
+    runCount: 12,
+    lastRunAt: '2026-02-11T10:00:00Z',
   },
   {
     id: 'auto-2',
     name: 'Auto-complete when checked',
-    tableId: 'table-1',
     enabled: true,
     trigger: {
-      type: 'fieldChanged',
+      type: 'record_updated',
       config: { fieldId: 'fld-8' },
     },
-    conditions: [
-      {
-        id: 'cond-2',
-        fieldId: 'fld-8',
-        operator: 'equals',
-        value: true,
-      },
-    ],
     actions: [
       {
-        type: 'updateRecord',
+        type: 'update_record',
         config: {
           fieldId: 'fld-2',
           value: 'opt-4',
         },
       },
     ],
+    createdAt: '2026-01-20T09:00:00Z',
+    lastModifiedAt: '2026-02-05T11:00:00Z',
+    description: 'Marks status as Done when checkbox is checked',
+    runCount: 5,
+    lastRunAt: '2026-02-09T10:20:00Z',
+  },
+];
+
+export const mockNotifications: Notification[] = [
+  {
+    id: 'notif-1',
+    type: 'assignment',
+    title: 'New task assigned',
+    message: 'Sarah Johnson assigned "Implement user authentication" to you.',
+    timestamp: new Date(Date.now() - 600000).toISOString(),
+    read: false,
+    actionLabel: 'View task',
+    actionUrl: '#',
+  },
+  {
+    id: 'notif-2',
+    type: 'comment',
+    title: 'New comment',
+    message: 'Mike Chen commented on "Design new dashboard layout": Great progress!',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    read: false,
+    actionLabel: 'Reply',
+    actionUrl: '#',
+  },
+  {
+    id: 'notif-3',
+    type: 'automation',
+    title: 'Automation triggered',
+    message: '"Notify on high priority tasks" ran successfully for 3 records.',
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    read: true,
+  },
+  {
+    id: 'notif-4',
+    type: 'reminder',
+    title: 'Due date approaching',
+    message: '"API documentation update" is due tomorrow.',
+    timestamp: new Date(Date.now() - 14400000).toISOString(),
+    read: false,
+    actionLabel: 'View task',
+    actionUrl: '#',
+  },
+  {
+    id: 'notif-5',
+    type: 'system',
+    title: 'System update',
+    message: 'DataOS has been updated to version 2.1 with new Gallery and Timeline views.',
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    read: true,
+  },
+];
+
+export const mockComments: Comment[] = [
+  {
+    id: 'comment-1',
+    userId: 'user-2',
+    userName: 'Sarah Johnson',
+    text: 'Looking good! Can we add OAuth support as well?',
+    createdAt: '2026-02-10T14:30:00Z',
+  },
+  {
+    id: 'comment-2',
+    userId: 'user-1',
+    userName: 'John Smith',
+    text: 'Yes, I\'ll add Google and GitHub OAuth providers in the next sprint.',
+    createdAt: '2026-02-10T15:20:00Z',
+  },
+  {
+    id: 'comment-3',
+    userId: 'user-3',
+    userName: 'Mike Chen',
+    text: 'Make sure to handle token refresh properly. We had issues with that in the previous project.',
+    createdAt: '2026-02-11T09:45:00Z',
   },
 ];
 
