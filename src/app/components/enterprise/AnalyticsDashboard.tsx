@@ -259,7 +259,7 @@ export function AnalyticsDashboard({ fields, records, tableName, members }: Anal
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full transition-all duration-500"
-                  style={{ width: `${stats.completionRate}%` }}
+                  ref={(el) => { if (el) el.style.width = `${stats.completionRate}%`; }}
                 />
               </div>
               <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">

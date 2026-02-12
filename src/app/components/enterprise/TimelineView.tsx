@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { Field, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
+import { ColorBadge } from '../ui/ColorBadge';
 
 interface TimelineViewProps {
   fields: Field[];
@@ -157,7 +158,7 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
 
       {/* Timeline body */}
       <div className="flex-1 overflow-auto">
-        <div style={{ minWidth: dayColumns.length * dayWidth }}>
+        <div ref={(el) => { if (el) el.style.minWidth = `${dayColumns.length * dayWidth}px`; }}>
           {/* Month headers */}
           <div className="flex border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 bg-white dark:bg-gray-900">
             <div className="w-56 min-w-56 border-r border-gray-200 dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-800">
@@ -168,7 +169,7 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
                 <div
                   key={idx}
                   className="border-r border-gray-200 dark:border-gray-700 px-2 py-1 bg-gray-50 dark:bg-gray-800"
-                  style={{ width: month.span * dayWidth }}
+                  ref={(el) => { if (el) el.style.width = `${month.span * dayWidth}px`; }}
                 >
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                     {month.name} {month.year}
@@ -188,7 +189,7 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
                   className={`flex flex-col items-center justify-center border-r border-gray-100 dark:border-gray-800 py-1 ${
                     isToday(day) ? 'bg-blue-50 dark:bg-blue-950' : isWeekend(day) ? 'bg-gray-50 dark:bg-gray-800/50' : ''
                   }`}
-                  style={{ width: dayWidth }}
+                  ref={(el) => { if (el) el.style.width = `${dayWidth}px`; }}
                 >
                   {zoomLevel !== 'month' && (
                     <span className="text-[10px] text-gray-400">{day.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}</span>
@@ -225,15 +226,12 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
                   )}
                   <span className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">{title}</span>
                   {status && (
-                    <span
+                    <ColorBadge
+                      color={status.color}
                       className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium flex-shrink-0"
-                      style={{
-                        backgroundColor: `${status.color === '#gray' ? '#9CA3AF' : status.color}20`,
-                        color: status.color === '#gray' ? '#4B5563' : status.color,
-                      }}
                     >
                       {status.name}
-                    </span>
+                    </ColorBadge>
                   )}
                 </div>
 
@@ -246,7 +244,7 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
                       return (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10"
-                          style={{ left: todayOffset * dayWidth }}
+                          ref={(el) => { if (el) el.style.left = `${todayOffset * dayWidth}px`; }}
                         />
                       );
                     }
@@ -256,9 +254,11 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
                   {/* Gantt bar */}
                   <div
                     className={`absolute top-2 h-7 ${barColor} rounded-md cursor-pointer hover:opacity-80 transition-opacity shadow-sm flex items-center px-2 overflow-hidden`}
-                    style={{
-                      left: item.startDay * dayWidth,
-                      width: Math.max(item.duration * dayWidth, 24),
+                    ref={(el) => {
+                      if (el) {
+                        el.style.left = `${item.startDay * dayWidth}px`;
+                        el.style.width = `${Math.max(item.duration * dayWidth, 24)}px`;
+                      }
                     }}
                     onClick={() => onRecordClick(item.record)}
                     title={`${title}\n${item.startDate.toLocaleDateString()} – ${item.endDate.toLocaleDateString()}`}

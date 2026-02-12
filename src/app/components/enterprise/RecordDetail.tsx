@@ -6,6 +6,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { toast } from 'sonner';
+import { ColorBadge } from '../ui/ColorBadge';
 
 interface RecordDetailProps {
   record: TableRecord;
@@ -107,15 +108,12 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
                   }}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                <span
+                <ColorBadge
+                  color={choice.color}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                  style={{
-                    backgroundColor: `${choice.color}20`,
-                    color: choice.color === '#gray' ? '#4B5563' : choice.color,
-                  }}
                 >
                   {choice.name}
-                </span>
+                </ColorBadge>
               </label>
             ))}
           </div>
