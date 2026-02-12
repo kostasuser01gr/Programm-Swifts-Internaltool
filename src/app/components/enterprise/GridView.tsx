@@ -177,6 +177,7 @@ export function GridView({ fields, records, onRecordClick, onCellChange, onAddRe
               type="checkbox"
               checked={!!value}
               readOnly
+              title="Record checkbox value"
               className="w-4 h-4 rounded border-gray-300 cursor-pointer"
             />
           </div>

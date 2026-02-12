@@ -211,8 +211,7 @@ export function TimelineView({ fields, records, dateFieldId, endDateFieldId, onR
             return (
               <div
                 key={item.record.id}
-                className="flex border-b border-gray-100 dark:border-gray-800 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 group"
-                style={{ height: 44 }}
+                className="flex border-b border-gray-100 dark:border-gray-800 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 group h-11"
               >
                 {/* Row label */}
                 <div

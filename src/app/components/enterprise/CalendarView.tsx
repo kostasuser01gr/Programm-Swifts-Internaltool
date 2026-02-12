@@ -98,7 +98,7 @@ export function CalendarView({ fields, records, dateFieldId, onRecordClick }: Ca
           ))}
         </div>
 
-        <div className="grid grid-cols-7 auto-rows-fr" style={{ height: 'calc(100% - 40px)' }}>
+        <div className="grid grid-cols-7 auto-rows-fr h-[calc(100%-40px)]">
           {/* Empty cells before first day */}
           {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
             <div

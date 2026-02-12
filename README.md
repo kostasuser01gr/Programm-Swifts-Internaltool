@@ -367,6 +367,7 @@ Every PR goes through automated security and quality checks before merge:
 ### Code Scanning (CodeQL)
 
 CodeQL runs on every PR and weekly against `main`. Results appear as:
+
 - **PR annotations**: Inline comments on vulnerable lines.
 - **Security tab**: Full list of alerts with severity, CWE references, and fix guidance.
 - **Copilot Autofix**: Automated patch suggestions on alerts — always review before accepting.
@@ -386,7 +387,8 @@ Use **Sentry for GitHub Copilot** to get production error insights directly in y
    - Open a fix branch/PR directly from Sentry suggestions.
 
 **Prompt examples:**
-```
+
+```text
 @sentry Suggest a minimal fix for the top error in login_screen.dart
 @sentry Generate unit tests covering the exception in schedule_service.dart
 @sentry Show unresolved issues linked to this PR's changed files
@@ -403,12 +405,14 @@ Use **Docker for GitHub Copilot** to optimize container configurations:
    - Ask: `@docker Scan this image for vulnerabilities`
 
 **This repo includes:**
+
 - Multi-stage `Dockerfile` (Node build → Nginx serve, ~25 MB final image).
 - `docker/nginx.conf` with gzip, SPA routing, security headers.
 - `.dockerignore` for minimal build context.
 - `shiftforge/docker-compose.yml` for PocketBase + Ollama backend.
 
 **Build & run locally:**
+
 ```bash
 docker build -t dataos .
 docker run -p 8080:80 dataos
@@ -427,6 +431,7 @@ Set up required status checks so that broken code cannot reach `main`:
    - ✅ Do not allow bypassing the above settings.
 
 **Quick CLI setup:**
+
 ```bash
 gh api \
   -X PUT \
@@ -491,6 +496,7 @@ This is a demonstration project. For production use, implement proper licensing.
 ## 🙏 Acknowledgments
 
 Built with modern tools and inspired by the best:
+
 - **Airtable** - Pioneering the database-as-spreadsheet model
 - **Notion** - Showing the power of flexible workspaces
 - **Linear** - Setting the bar for product design
@@ -501,6 +507,7 @@ Built with modern tools and inspired by the best:
 ## 📧 Contact
 
 For enterprise inquiries, architecture questions, or collaboration:
+
 - **Demo**: Coming Soon
 - **Docs**: See [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **GitHub**: See repository root
