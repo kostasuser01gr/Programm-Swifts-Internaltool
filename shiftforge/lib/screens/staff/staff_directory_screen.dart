@@ -137,7 +137,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
   }
 
   void _showEmployeeForm(BuildContext context) {
-    // TODO: Full employee create/edit form
+    // Employee create/edit form — planned for v2
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Φόρμα προσωπικού — υπό ανάπτυξη')),
     );

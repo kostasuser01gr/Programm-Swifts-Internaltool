@@ -179,9 +179,11 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
       // Ensure schedule week exists
       var week = state.scheduleWeek;
       if (week == null) {
+        final model = _pb.authStore.model;
+        final currentUserId = model is RecordModel ? model.id : '';
         week = await _service.createScheduleWeek(
           state.selectedWeekStart,
-          '', // TODO: pass current user ID
+          currentUserId,
         );
         state = state.copyWith(scheduleWeek: week);
       }
