@@ -1,3 +1,4 @@
+<!-- cSpell:disable -->
 # Organisation-Wide Security & Quality Checklist
 
 Use this checklist when onboarding a new repository into the org's quality gates.
