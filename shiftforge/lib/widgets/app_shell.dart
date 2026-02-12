@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../utils/theme.dart';
-
 class AppShell extends ConsumerWidget {
   final Widget child;
   const AppShell({super.key, required this.child});

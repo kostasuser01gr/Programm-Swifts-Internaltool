@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 
 /// Placeholder chat service providers (to be replaced with full implementation)

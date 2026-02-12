@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/models.dart';
-import '../../utils/theme.dart';
 
 class StaffDirectoryScreen extends ConsumerStatefulWidget {
   const StaffDirectoryScreen({super.key});
@@ -137,7 +136,7 @@ class _StaffDirectoryScreenState extends ConsumerState<StaffDirectoryScreen> {
     );
   }
 
-  void _showEmployeeForm(BuildContext context, [Employee? existing]) {
+  void _showEmployeeForm(BuildContext context) {
     // TODO: Full employee create/edit form
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Φόρμα προσωπικού — υπό ανάπτυξη')),
@@ -267,7 +266,7 @@ class _EmployeeTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: team!.colorHex.toColor().withOpacity(0.15),
+                color: team!.colorHex.toColor().withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(team!.name,

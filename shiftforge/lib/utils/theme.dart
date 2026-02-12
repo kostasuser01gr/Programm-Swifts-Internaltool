@@ -6,7 +6,6 @@ class ShiftForgeTheme {
 
   // ── Brand Colors ──────────────────────────────────────
   static const Color _seed = Color(0xFF1565C0); // deep blue
-  static const Color _accent = Color(0xFF00897B); // teal
 
   // ── Light Theme ───────────────────────────────────────
   static final ThemeData light = ThemeData(
@@ -19,7 +18,7 @@ class ShiftForgeTheme {
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -89,7 +88,7 @@ class ShiftForgeTheme {
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

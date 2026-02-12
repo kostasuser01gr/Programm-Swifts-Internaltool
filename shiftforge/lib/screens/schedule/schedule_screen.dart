@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/models.dart';
@@ -15,7 +14,6 @@ class ScheduleScreen extends ConsumerStatefulWidget {
 }
 
 class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
-  String? _selectedEmployeeId;
   String? _selectedCellKey; // "employeeId:dayIndex"
 
   @override
@@ -36,7 +34,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final authState = ref.watch(authProvider);
     final canEdit =
         authState.role.canEditSchedule && schedState.scheduleWeek?.status != ScheduleStatus.published;
-    final isWide = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       appBar: AppBar(
@@ -140,7 +137,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         onCellTap: (empId, dayIdx) {
                           setState(() {
                             _selectedCellKey = '$empId:$dayIdx';
-                            _selectedEmployeeId = empId;
                           });
                           if (canEdit) {
                             _showShiftPicker(
@@ -303,7 +299,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         onTap: () {
                           ref
                               .read(scheduleProvider.notifier)
-                              .assignShift(employeeId, date, dayIndex + 1, sc.id);
+                              .assignShift(employeeId: employeeId, date: date, shiftCodeId: sc.id);
                           Navigator.pop(ctx);
                         },
                       );
@@ -334,8 +330,8 @@ class _StatusChip extends StatelessWidget {
     };
     return Chip(
       label: Text(s.displayName, style: const TextStyle(fontSize: 12)),
-      backgroundColor: color.withOpacity(0.15),
-      side: BorderSide(color: color.withOpacity(0.4)),
+      backgroundColor: color.withValues(alpha: 0.15),
+      side: BorderSide(color: color.withValues(alpha: 0.4)),
       visualDensity: VisualDensity.compact,
     );
   }
@@ -392,7 +388,7 @@ class _ShiftCodeLegend extends StatelessWidget {
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               visualDensity: VisualDensity.compact,
               backgroundColor:
-                  ShiftForgeTheme.shiftColor(sc.colorHex).withOpacity(0.2),
+                  ShiftForgeTheme.shiftColor(sc.colorHex).withValues(alpha: 0.2),
               label: Text(sc.code, style: const TextStyle(fontSize: 11)),
               padding: EdgeInsets.zero,
             ),
@@ -432,7 +428,7 @@ class _WeeklyGrid extends StatelessWidget {
           dataRowMaxHeight: 52,
           horizontalMargin: 8,
           border: TableBorder.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.3),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
             width: 0.5,
           ),
           columns: [
@@ -456,7 +452,7 @@ class _WeeklyGrid extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.1),
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         )
                       : null,
@@ -577,7 +573,7 @@ class _ShiftCell extends StatelessWidget {
               ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
               : null,
           borderRadius: BorderRadius.circular(6),
-          color: Colors.grey.withOpacity(0.05),
+          color: Colors.grey.withValues(alpha: 0.05),
         ),
         child: Text(
           isEditable ? '+' : '—',
@@ -597,11 +593,11 @@ class _ShiftCell extends StatelessWidget {
       height: 36,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: bgColor.withOpacity(shiftCode!.isRestDay ? 0.3 : 0.85),
+        color: bgColor.withValues(alpha: shiftCode!.isRestDay ? 0.3 : 0.85),
         borderRadius: BorderRadius.circular(6),
         border: isSelected
             ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
-            : Border.all(color: bgColor.withOpacity(0.3), width: 0.5),
+            : Border.all(color: bgColor.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Text(
         shiftCode!.code,

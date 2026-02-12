@@ -24,8 +24,8 @@ class SettingsScreen extends ConsumerWidget {
                   CircleAvatar(
                     radius: 28,
                     child: Text(
-                      authState.employee?.displayName.isNotEmpty == true
-                          ? authState.employee!.displayName[0]
+                      authState.currentUser?.displayName.isNotEmpty == true
+                          ? authState.currentUser!.displayName[0]
                           : '?',
                       style: const TextStyle(fontSize: 22),
                     ),
@@ -36,11 +36,11 @@ class SettingsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          authState.employee?.displayName ?? 'Χρήστης',
+                          authState.currentUser?.displayName ?? 'Χρήστης',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        Text(authState.employee?.email ?? '',
+                        Text(authState.currentUser?.email ?? '',
                             style: Theme.of(context).textTheme.bodySmall),
                         Chip(
                           label: Text(authState.role.displayName,

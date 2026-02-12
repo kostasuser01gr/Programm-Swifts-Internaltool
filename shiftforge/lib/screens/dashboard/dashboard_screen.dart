@@ -39,7 +39,7 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   // Greeting
                   Text(
-                    'Καλησπέρα, ${authState.employee?.firstName ?? 'Χρήστη'} 👋',
+                    'Καλησπέρα, ${authState.currentUser?.firstName ?? 'Χρήστη'} 👋',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 4),
