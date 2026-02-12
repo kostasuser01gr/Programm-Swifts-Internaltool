@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner';
+import { ColorDot } from '../ui/ColorBadge';
 
 interface FieldEditorProps {
   fields: Field[];
@@ -224,9 +225,9 @@ export function FieldEditor({ fields, onSave, onClose }: FieldEditorProps) {
                       <div className="space-y-1">
                         {field.options?.choices?.map((choice) => (
                           <div key={choice.id} className="flex items-center gap-2">
-                            <div
+                            <ColorDot
+                              color={choice.color}
                               className="w-3 h-3 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: choice.color }}
                             />
                             <Input
                               value={choice.name}

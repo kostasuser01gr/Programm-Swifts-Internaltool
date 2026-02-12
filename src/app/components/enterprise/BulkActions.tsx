@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2, Edit3, Download, Tag, Copy, X, CheckSquare2 } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
@@ -9,7 +9,7 @@ interface BulkActionsProps {
   records: TableRecord[];
   fields: Field[];
   onDelete: (ids: string[]) => void;
-  onUpdateField: (ids: string[], fieldId: string, value: unknown) => void;
+  onUpdateField: (ids: string[], fieldId: string, value: FieldValue) => void;
   onExport: (ids: string[]) => void;
   onDuplicate: (ids: string[]) => void;
   onClearSelection: () => void;
@@ -54,6 +54,7 @@ export function BulkActions({
         {editField ? (
           <div className="flex items-center gap-2">
             <select
+              title="Select new value"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               className="h-8 px-2 bg-gray-800 dark:bg-gray-200 rounded-md text-sm border border-gray-700 dark:border-gray-300"
@@ -84,6 +85,7 @@ export function BulkActions({
             {selectFields.length > 0 && (
               <div className="relative">
                 <select
+                  title="Select field to edit"
                   value=""
                   onChange={(e) => {
                     if (e.target.value) setEditField(e.target.value);

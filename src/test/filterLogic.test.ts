@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Filter, Record } from '../app/types';
+import type { Filter, FieldValue, Record } from '../app/types';
 
 function applyFilters(records: Record[], filters: Filter[]): Record[] {
   let filtered = records;
@@ -33,9 +33,9 @@ function applyFilters(records: Record[], filters: Filter[]): Record[] {
   return filtered;
 }
 
-const makeRecord = (id: string, fields: Record<string, unknown>): Record => ({
+const makeRecord = (id: string, fields: { [key: string]: FieldValue }): Record => ({
   id,
-  fields: fields as { [key: string]: unknown },
+  fields,
   createdTime: '2026-01-01T00:00:00Z',
   createdBy: 'user-1',
   modifiedTime: '2026-01-01T00:00:00Z',

@@ -2,17 +2,18 @@ import { useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Plus, MoreHorizontal } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner';
+import { ColorBadge, ColorDot } from '../ui/ColorBadge';
 
 interface KanbanViewProps {
   fields: Field[];
   records: TableRecord[];
   groupByFieldId: string;
   onRecordClick: (record: TableRecord) => void;
-  onCellChange: (recordId: string, fieldId: string, value: unknown) => void;
+  onCellChange: (recordId: string, fieldId: string, value: FieldValue) => void;
   members: { id: string; name: string; email: string }[];
 }
 
@@ -69,16 +70,13 @@ function KanbanCard({
           {(Array.isArray(record.fields[tagsField.id]) ? record.fields[tagsField.id] : []).map((tagId: string) => {
             const tag = tagsField.options?.choices?.find((c) => c.id === tagId);
             return tag ? (
-              <span
+              <ColorBadge
                 key={tagId}
+                color={tag.color}
                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                style={{
-                  backgroundColor: `${tag.color}20`,
-                  color: tag.color === '#gray' ? '#4B5563' : tag.color,
-                }}
               >
                 {tag.name}
-              </span>
+              </ColorBadge>
             ) : null;
           })}
         </div>
@@ -148,11 +146,9 @@ function KanbanColumn({
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div
+          <ColorDot
+            color={column.color}
             className="w-3 h-3 rounded-full"
-            style={{
-              backgroundColor: column.color === '#gray' ? '#9CA3AF' : column.color,
-            }}
           />
           <h3 className="font-medium text-sm">{column.name}</h3>
           <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">

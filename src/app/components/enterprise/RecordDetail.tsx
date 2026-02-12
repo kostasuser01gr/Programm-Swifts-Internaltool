@@ -1,17 +1,18 @@
-import { X, Calendar, User, Tag, Clock, History } from 'lucide-react';
+import { X, Calendar, User, Tag, History } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { toast } from 'sonner';
+import { ColorBadge } from '../ui/ColorBadge';
 
 interface RecordDetailProps {
   record: TableRecord;
   fields: Field[];
   onClose: () => void;
-  onFieldChange: (fieldId: string, value: unknown) => void;
+  onFieldChange: (fieldId: string, value: FieldValue) => void;
   members: { id: string; name: string; email: string }[];
 }
 
@@ -107,15 +108,12 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
                   }}
                   className="w-4 h-4 rounded border-gray-300"
                 />
-                <span
+                <ColorBadge
+                  color={choice.color}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                  style={{
-                    backgroundColor: `${choice.color}20`,
-                    color: choice.color === '#gray' ? '#4B5563' : choice.color,
-                  }}
                 >
                   {choice.name}
-                </span>
+                </ColorBadge>
               </label>
             ))}
           </div>

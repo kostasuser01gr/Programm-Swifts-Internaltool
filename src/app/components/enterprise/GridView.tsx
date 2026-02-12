@@ -4,15 +4,16 @@ import {
   Type, Hash, Tag, Tags, CalendarDays, CheckSquare, User,
   Paperclip, FunctionSquare, Link, AlertCircle,
 } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
+import { ColorBadge } from '../ui/ColorBadge';
 
 interface GridViewProps {
   fields: Field[];
   records: TableRecord[];
   onRecordClick: (record: TableRecord) => void;
-  onCellChange: (recordId: string, fieldId: string, value: unknown) => void;
+  onCellChange: (recordId: string, fieldId: string, value: FieldValue) => void;
   onAddRecord?: () => void;
   members: { id: string; name: string; email: string }[];
 }
@@ -177,6 +178,7 @@ export function GridView({ fields, records, onRecordClick, onCellChange, onAddRe
               type="checkbox"
               checked={!!value}
               readOnly
+              title="Record checkbox value"
               className="w-4 h-4 rounded border-gray-300 cursor-pointer"
             />
           </div>
@@ -186,15 +188,12 @@ export function GridView({ fields, records, onRecordClick, onCellChange, onAddRe
         const option = field.options?.choices?.find((c) => c.id === value);
         return option ? (
           <div className="px-2">
-            <span
+            <ColorBadge
+              color={option.color}
               className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-              style={{
-                backgroundColor: `${option.color}20`,
-                color: option.color === '#gray' ? '#4B5563' : option.color,
-              }}
             >
               {option.name}
-            </span>
+            </ColorBadge>
           </div>
         ) : null;
       }
@@ -206,16 +205,13 @@ export function GridView({ fields, records, onRecordClick, onCellChange, onAddRe
             {selected.map((id: string) => {
               const opt = field.options?.choices?.find((c) => c.id === id);
               return opt ? (
-                <span
+                <ColorBadge
                   key={id}
+                  color={opt.color}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                  style={{
-                    backgroundColor: `${opt.color}20`,
-                    color: opt.color === '#gray' ? '#4B5563' : opt.color,
-                  }}
                 >
                   {opt.name}
-                </span>
+                </ColorBadge>
               ) : null;
             })}
           </div>

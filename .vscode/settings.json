@@ -1,0 +1,10 @@
+{
+    "DockerRun.DisableDockerrc": true,
+    "cSpell.ignorePaths": [
+        "org/**",
+        "shiftforge/**",
+        "docker/**",
+        "guidelines/**",
+        "pnpm-lock.yaml"
+    ]
+}

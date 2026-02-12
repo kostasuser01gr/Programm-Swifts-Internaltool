@@ -11,7 +11,7 @@ export const mockWorkspace: Workspace = {
       email: 'john@acme.com',
       name: 'John Smith',
       role: 'owner',
-      status: 'active',
+      status: 'online',
       lastActive: new Date().toISOString(),
     },
     {
@@ -19,7 +19,7 @@ export const mockWorkspace: Workspace = {
       email: 'sarah@acme.com',
       name: 'Sarah Johnson',
       role: 'admin',
-      status: 'active',
+      status: 'online',
       lastActive: new Date(Date.now() - 3600000).toISOString(),
     },
     {
@@ -27,7 +27,7 @@ export const mockWorkspace: Workspace = {
       email: 'mike@acme.com',
       name: 'Mike Chen',
       role: 'editor',
-      status: 'active',
+      status: 'away',
       lastActive: new Date(Date.now() - 7200000).toISOString(),
     },
   ],
@@ -365,22 +365,21 @@ export const mockAutomations: Automation[] = [
   {
     id: 'auto-1',
     name: 'Notify on high priority tasks',
+    tableId: 'table-1',
     enabled: true,
     trigger: {
-      type: 'record_created',
+      type: 'recordCreated',
       config: {},
     },
     actions: [
       {
-        type: 'send_email',
+        type: 'sendEmail',
         config: {
           recipients: ['user-1', 'user-2'],
           message: 'New urgent task created: {Task Name}',
         },
       },
     ],
-    createdAt: '2026-01-15T10:00:00Z',
-    lastModifiedAt: '2026-02-01T14:30:00Z',
     description: 'Sends email when a new high-priority task is created',
     runCount: 12,
     lastRunAt: '2026-02-11T10:00:00Z',
@@ -388,22 +387,21 @@ export const mockAutomations: Automation[] = [
   {
     id: 'auto-2',
     name: 'Auto-complete when checked',
+    tableId: 'table-1',
     enabled: true,
     trigger: {
-      type: 'record_updated',
+      type: 'recordUpdated',
       config: { fieldId: 'fld-8' },
     },
     actions: [
       {
-        type: 'update_record',
+        type: 'updateRecord',
         config: {
           fieldId: 'fld-2',
           value: 'opt-4',
         },
       },
     ],
-    createdAt: '2026-01-20T09:00:00Z',
-    lastModifiedAt: '2026-02-05T11:00:00Z',
     description: 'Marks status as Done when checkbox is checked',
     runCount: 5,
     lastRunAt: '2026-02-09T10:20:00Z',
@@ -418,8 +416,11 @@ export const mockNotifications: Notification[] = [
     message: 'Sarah Johnson assigned "Implement user authentication" to you.',
     timestamp: new Date(Date.now() - 600000).toISOString(),
     read: false,
+    userId: 'user-1',
     actionLabel: 'View task',
-    actionUrl: '#',
+    link: '#',
+    entityType: 'record',
+    entityId: 'rec-1',
   },
   {
     id: 'notif-2',
@@ -428,8 +429,11 @@ export const mockNotifications: Notification[] = [
     message: 'Mike Chen commented on "Design new dashboard layout": Great progress!',
     timestamp: new Date(Date.now() - 3600000).toISOString(),
     read: false,
+    userId: 'user-1',
     actionLabel: 'Reply',
-    actionUrl: '#',
+    link: '#',
+    entityType: 'record',
+    entityId: 'rec-2',
   },
   {
     id: 'notif-3',
@@ -438,6 +442,7 @@ export const mockNotifications: Notification[] = [
     message: '"Notify on high priority tasks" ran successfully for 3 records.',
     timestamp: new Date(Date.now() - 7200000).toISOString(),
     read: true,
+    userId: 'user-1',
   },
   {
     id: 'notif-4',
@@ -446,8 +451,11 @@ export const mockNotifications: Notification[] = [
     message: '"API documentation update" is due tomorrow.',
     timestamp: new Date(Date.now() - 14400000).toISOString(),
     read: false,
+    userId: 'user-1',
     actionLabel: 'View task',
-    actionUrl: '#',
+    link: '#',
+    entityType: 'record',
+    entityId: 'rec-5',
   },
   {
     id: 'notif-5',
@@ -456,30 +464,31 @@ export const mockNotifications: Notification[] = [
     message: 'DataOS has been updated to version 2.1 with new Gallery and Timeline views.',
     timestamp: new Date(Date.now() - 86400000).toISOString(),
     read: true,
+    userId: 'user-1',
   },
 ];
 
 export const mockComments: Comment[] = [
   {
     id: 'comment-1',
+    recordId: 'rec-1',
     userId: 'user-2',
-    userName: 'Sarah Johnson',
-    text: 'Looking good! Can we add OAuth support as well?',
-    createdAt: '2026-02-10T14:30:00Z',
+    content: 'Looking good! Can we add OAuth support as well?',
+    timestamp: '2026-02-10T14:30:00Z',
   },
   {
     id: 'comment-2',
+    recordId: 'rec-1',
     userId: 'user-1',
-    userName: 'John Smith',
-    text: 'Yes, I\'ll add Google and GitHub OAuth providers in the next sprint.',
-    createdAt: '2026-02-10T15:20:00Z',
+    content: 'Yes, I\'ll add Google and GitHub OAuth providers in the next sprint.',
+    timestamp: '2026-02-10T15:20:00Z',
   },
   {
     id: 'comment-3',
+    recordId: 'rec-1',
     userId: 'user-3',
-    userName: 'Mike Chen',
-    text: 'Make sure to handle token refresh properly. We had issues with that in the previous project.',
-    createdAt: '2026-02-11T09:45:00Z',
+    content: 'Make sure to handle token refresh properly. We had issues with that in the previous project.',
+    timestamp: '2026-02-11T09:45:00Z',
   },
 ];
 

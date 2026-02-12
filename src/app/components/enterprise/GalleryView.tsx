@@ -3,6 +3,7 @@ import { Image, User, Calendar as CalendarIcon, MoreHorizontal, Plus, Grid3x3, L
 import { Field, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
+import { ColorBadge } from '../ui/ColorBadge';
 
 interface GalleryViewProps {
   fields: Field[];
@@ -118,15 +119,12 @@ export function GalleryView({ fields, records, onRecordClick, members, cardSize 
               <div className="p-3 space-y-2">
                 {/* Status badge */}
                 {status && (
-                  <span
+                  <ColorBadge
+                    color={status.color}
                     className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                    style={{
-                      backgroundColor: `${status.color === '#gray' ? '#9CA3AF' : status.color}20`,
-                      color: status.color === '#gray' ? '#4B5563' : status.color,
-                    }}
                   >
                     {status.name}
-                  </span>
+                  </ColorBadge>
                 )}
 
                 {/* Description preview */}
@@ -140,16 +138,13 @@ export function GalleryView({ fields, records, onRecordClick, members, cardSize 
                     {tags.slice(0, 3).map((tagId) => {
                       const tag = tagsField?.options?.choices?.find((c) => c.id === tagId);
                       return tag ? (
-                        <span
+                        <ColorBadge
                           key={tagId}
+                          color={tag.color}
                           className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
-                          style={{
-                            backgroundColor: `${tag.color === '#gray' ? '#9CA3AF' : tag.color}20`,
-                            color: tag.color === '#gray' ? '#4B5563' : tag.color,
-                          }}
                         >
                           {tag.name}
-                        </span>
+                        </ColorBadge>
                       ) : null;
                     })}
                     {tags.length > 3 && (

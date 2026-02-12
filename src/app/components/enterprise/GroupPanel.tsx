@@ -64,6 +64,7 @@ export function GroupPanel({ fields, groups, onGroupsChange, onClose }: GroupPan
             <span className="text-xs text-gray-500 w-16">{index === 0 ? 'Group by' : 'Then by'}</span>
 
             <select
+              title="Select field to group"
               value={group.fieldId}
               onChange={(e) => updateGroup(index, { fieldId: e.target.value })}
               className="h-8 px-2 text-sm border border-gray-300 rounded-md"

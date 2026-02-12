@@ -1,0 +1,46 @@
+# ============================================================
+# Reusable CodeQL Workflow — Org-wide template
+# Place in: <OWNER>/.github/.github/workflows/reusable-codeql.yml
+# ============================================================
+
+name: reusable-codeql
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: 'JSON array of CodeQL languages to scan'
+        required: false
+        type: string
+        default: '["javascript-typescript"]'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJson(inputs.languages) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Search, Settings, Users, Database, Zap, BarChart, Bot, Moon, Sun, Bell, FileInput } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Search, Settings, Users, Database, Zap, BarChart, Bot, Moon, Sun, Bell } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';

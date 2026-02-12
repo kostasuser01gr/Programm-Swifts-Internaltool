@@ -1,0 +1,101 @@
+# ============================================================
+# ShiftForge — GitHub Actions CI/CD
+# Build Flutter Web + Deploy to GitHub Pages (FREE)
+# ============================================================
+
+name: ShiftForge CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # ── Build Flutter Web ────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: shiftforge
+        run: flutter pub get
+
+      - name: Analyze code
+        working-directory: shiftforge
+        run: flutter analyze --no-fatal-infos
+
+      - name: Build web
+        working-directory: shiftforge
+        run: |
+          flutter build web \
+            --release \
+            --web-renderer canvaskit
+
+      - name: Upload web build
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: shiftforge/build/web
+
+  # ── Deploy to GitHub Pages ───────────────────────────
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ── Build APK (Android) ─────────────────────────────
+  build-android:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: shiftforge
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: shiftforge
+        run: |
+          flutter build apk \
+            --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: shiftforge-apk
+          path: shiftforge/build/app/outputs/flutter-apk/app-release.apk

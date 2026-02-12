@@ -1,0 +1,283 @@
+[
+  {
+    "name": "teams",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "description", "type": "text" },
+      { "name": "colorHex", "type": "text", "required": true },
+      { "name": "sortOrder", "type": "number" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "employees",
+    "type": "auth",
+    "schema": [
+      { "name": "internalCode", "type": "text", "required": true },
+      { "name": "firstName", "type": "text", "required": true },
+      { "name": "lastName", "type": "text", "required": true },
+      { "name": "displayName", "type": "text", "required": true },
+      { "name": "phone", "type": "text" },
+      { "name": "role", "type": "select", "required": true,
+        "options": { "values": ["owner","admin","manager","staff","viewer"] }
+      },
+      { "name": "teamId", "type": "relation", "required": true,
+        "options": { "collectionId": "teams", "maxSelect": 1 }
+      },
+      { "name": "skills", "type": "json" },
+      { "name": "contractHoursPerWeek", "type": "number" },
+      { "name": "defaultAvailability", "type": "json" },
+      { "name": "isActive", "type": "bool" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.id = id",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "shift_codes",
+    "type": "base",
+    "schema": [
+      { "name": "code", "type": "text", "required": true },
+      { "name": "label", "type": "text", "required": true },
+      { "name": "colorHex", "type": "text", "required": true },
+      { "name": "startTime", "type": "text" },
+      { "name": "endTime", "type": "text" },
+      { "name": "paidHours", "type": "number", "required": true },
+      { "name": "isRestDay", "type": "bool" },
+      { "name": "isNightShift", "type": "bool" },
+      { "name": "tags", "type": "json" },
+      { "name": "sortOrder", "type": "number" },
+      { "name": "isActive", "type": "bool" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "schedule_weeks",
+    "type": "base",
+    "schema": [
+      { "name": "weekStartDate", "type": "date", "required": true },
+      { "name": "status", "type": "select", "required": true,
+        "options": { "values": ["draft","published","archived"] }
+      },
+      { "name": "createdBy", "type": "relation",
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "publishedAt", "type": "date" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "deleteRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'"
+  },
+  {
+    "name": "shift_assignments",
+    "type": "base",
+    "schema": [
+      { "name": "scheduleWeekId", "type": "relation", "required": true,
+        "options": { "collectionId": "schedule_weeks", "maxSelect": 1 }
+      },
+      { "name": "employeeId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "shiftCodeId", "type": "relation", "required": true,
+        "options": { "collectionId": "shift_codes", "maxSelect": 1 }
+      },
+      { "name": "date", "type": "date", "required": true },
+      { "name": "dayOfWeek", "type": "number" },
+      { "name": "notes", "type": "text" },
+      { "name": "isOverride", "type": "bool" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "deleteRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'"
+  },
+  {
+    "name": "leave_requests",
+    "type": "base",
+    "schema": [
+      { "name": "employeeId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "requestedDate", "type": "date", "required": true },
+      { "name": "reason", "type": "text", "required": true },
+      { "name": "status", "type": "select", "required": true,
+        "options": { "values": ["pending","approved","denied","cancelled"] }
+      },
+      { "name": "reviewedBy", "type": "relation",
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "reviewNote", "type": "text" }
+    ],
+    "listRule": "@request.auth.id != '' && (@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager' || employeeId = @request.auth.id)",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "swap_requests",
+    "type": "base",
+    "schema": [
+      { "name": "requesterId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "targetEmployeeId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "requesterAssignmentId", "type": "relation", "required": true,
+        "options": { "collectionId": "shift_assignments", "maxSelect": 1 }
+      },
+      { "name": "targetAssignmentId", "type": "relation", "required": true,
+        "options": { "collectionId": "shift_assignments", "maxSelect": 1 }
+      },
+      { "name": "reason", "type": "text" },
+      { "name": "status", "type": "select", "required": true,
+        "options": { "values": ["pending","approved","denied","cancelled"] }
+      },
+      { "name": "requesterConfirmed", "type": "bool" },
+      { "name": "targetConfirmed", "type": "bool" },
+      { "name": "reviewedBy", "type": "relation",
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "reviewNote", "type": "text" }
+    ],
+    "listRule": "@request.auth.id != '' && (@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager' || requesterId = @request.auth.id || targetEmployeeId = @request.auth.id)",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager' || targetEmployeeId = @request.auth.id",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "channels",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "type", "type": "select", "required": true,
+        "options": { "values": ["announcement","team","department","directMessage"] }
+      },
+      { "name": "memberIds", "type": "relation",
+        "options": { "collectionId": "employees", "maxSelect": 999 }
+      },
+      { "name": "lastMessage", "type": "text" },
+      { "name": "lastMessageAt", "type": "date" }
+    ],
+    "listRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "viewRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "chat_messages",
+    "type": "base",
+    "schema": [
+      { "name": "channelId", "type": "relation", "required": true,
+        "options": { "collectionId": "channels", "maxSelect": 1 }
+      },
+      { "name": "senderId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "senderName", "type": "text" },
+      { "name": "text", "type": "text", "required": true },
+      { "name": "shiftReference", "type": "json" },
+      { "name": "attachmentUrls", "type": "json" },
+      { "name": "isEdited", "type": "bool" }
+    ],
+    "listRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "viewRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "createRule": "@request.auth.id != '' && @request.auth.role != 'viewer'",
+    "updateRule": "senderId = @request.auth.id",
+    "deleteRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || senderId = @request.auth.id"
+  },
+  {
+    "name": "audit_log",
+    "type": "base",
+    "schema": [
+      { "name": "actorId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "actorName", "type": "text" },
+      { "name": "action", "type": "text", "required": true },
+      { "name": "entityType", "type": "text", "required": true },
+      { "name": "entityId", "type": "text", "required": true },
+      { "name": "beforeJson", "type": "json" },
+      { "name": "afterJson", "type": "json" },
+      { "name": "description", "type": "text" }
+    ],
+    "listRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "viewRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "constraint_rules",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "type", "type": "select", "required": true,
+        "options": { "values": ["maxHoursPerWeek","minRestBetweenShifts","minDaysOffPerWeek","maxConsecutiveDays","minCoveragePerShiftCode","fairnessBalance","skillRequirement","noBackToBackNights"] }
+      },
+      { "name": "isEnabled", "type": "bool" },
+      { "name": "parameters", "type": "json" },
+      { "name": "appliesTo", "type": "text" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "deleteRule": "@request.auth.role = 'owner'"
+  },
+  {
+    "name": "schedule_templates",
+    "type": "base",
+    "schema": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "description", "type": "text" },
+      { "name": "entries", "type": "json" },
+      { "name": "createdBy", "type": "relation",
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "updateRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin' || @request.auth.role = 'manager'",
+    "deleteRule": "@request.auth.role = 'owner' || @request.auth.role = 'admin'"
+  },
+  {
+    "name": "notifications",
+    "type": "base",
+    "schema": [
+      { "name": "recipientId", "type": "relation", "required": true,
+        "options": { "collectionId": "employees", "maxSelect": 1 }
+      },
+      { "name": "type", "type": "select", "required": true,
+        "options": { "values": ["schedulePublished","shiftChanged","swapRequested","swapApproved","leaveApproved","leaveDenied","urgentMessage","aiSuggestion","coverageAlert"] }
+      },
+      { "name": "title", "type": "text", "required": true },
+      { "name": "body", "type": "text" },
+      { "name": "referenceId", "type": "text" },
+      { "name": "isRead", "type": "bool" }
+    ],
+    "listRule": "recipientId = @request.auth.id",
+    "viewRule": "recipientId = @request.auth.id",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "recipientId = @request.auth.id",
+    "deleteRule": "recipientId = @request.auth.id || @request.auth.role = 'owner'"
+  }
+]

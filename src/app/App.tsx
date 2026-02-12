@@ -22,7 +22,7 @@ import { AutomationBuilder } from './components/enterprise/AutomationBuilder';
 import { FieldEditor } from './components/enterprise/FieldEditor';
 import { ErrorBoundary } from './components/enterprise/ErrorBoundary';
 import { mockWorkspace, mockBase, mockTable, mockAutomations, mockNotifications, mockComments } from './data/mockData';
-import { Base, Table, View, Record as TableRecord, Filter, Sort, Group, Automation, Notification } from './types';
+import { Base, Table, View, Record as TableRecord, Filter, Sort, Group, Automation, Notification, FieldValue } from './types';
 import { useUndoRedo } from './hooks/useUndoRedo';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSearch } from './hooks/useSearch';
@@ -159,7 +159,7 @@ export default function App() {
     setShowAnalytics(false);
   };
 
-  const handleCellChange = (recordId: string, fieldId: string, value: unknown) => {
+  const handleCellChange = (recordId: string, fieldId: string, value: FieldValue) => {
     const oldRecord = tableData.records.find((r) => r.id === recordId);
     const oldValue = oldRecord?.fields[fieldId];
     pushAction({
@@ -219,7 +219,7 @@ export default function App() {
     toast.success('New record created');
   };
 
-  const handleRecordFieldChange = (fieldId: string, value: unknown) => {
+  const handleRecordFieldChange = (fieldId: string, value: FieldValue) => {
     if (selectedRecord) {
       handleCellChange(selectedRecord.id, fieldId, value);
       setSelectedRecord((prev) =>
@@ -265,7 +265,7 @@ export default function App() {
     setSelectedRecords([]);
   }, []);
 
-  const handleBulkUpdateField = useCallback((ids: string[], fieldId: string, value: unknown) => {
+  const handleBulkUpdateField = useCallback((ids: string[], fieldId: string, value: FieldValue) => {
     setTableData((prev) => ({
       ...prev,
       records: prev.records.map((r) =>

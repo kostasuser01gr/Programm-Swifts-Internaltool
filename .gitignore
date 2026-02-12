@@ -3,3 +3,10 @@ dist
 .env
 .env.local
 *.log
+
+# Flutter/Dart build artifacts
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+pubspec.lock
