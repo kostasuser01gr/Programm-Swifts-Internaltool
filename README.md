@@ -331,6 +331,112 @@ Type safety prevents bugs, improves DX, and makes refactoring fearless. The smal
 
 ---
 
+## 🛡️ Quality Gates & Autofix
+
+### TL;DR
+
+Every PR goes through automated security and quality checks before merge:
+
+| Check | What it does | Trigger |
+|-------|-------------|---------|
+| **CodeQL** | Static analysis for vulnerabilities (XSS, injection, etc.) | PR + weekly |
+| **Copilot Autofix** | AI-suggested patches for code scanning alerts | On alert |
+| **CI Tests** | Unit & integration tests via Vitest | PR + push |
+| **Flutter Analyze** | Dart static analysis for ShiftForge | PR + push |
+
+### Code Scanning (CodeQL)
+
+CodeQL runs on every PR and weekly against `main`. Results appear as:
+- **PR annotations**: Inline comments on vulnerable lines.
+- **Security tab**: Full list of alerts with severity, CWE references, and fix guidance.
+- **Copilot Autofix**: Automated patch suggestions on alerts — always review before accepting.
+
+> **Enable Default Setup (UI)**: Settings → Code security → Code scanning → CodeQL analysis → Default setup → Enable.
+
+### Sentry Copilot Extension
+
+Use **Sentry for GitHub Copilot** to get production error insights directly in your editor:
+
+1. **Install**: VS Code Extensions → Search "Sentry for GitHub Copilot" → Install.
+2. **Connect**: Link to your Sentry project (DSN + auth token) via the extension settings.
+3. **Usage in PRs**:
+   - Ask Copilot Chat: `@sentry What errors affected this file in the last 7 days?`
+   - Get **fix proposals** with context from stack traces.
+   - **Generate unit tests** for error-prone code paths.
+   - Open a fix branch/PR directly from Sentry suggestions.
+
+**Prompt examples:**
+```
+@sentry Suggest a minimal fix for the top error in login_screen.dart
+@sentry Generate unit tests covering the exception in schedule_service.dart
+@sentry Show unresolved issues linked to this PR's changed files
+```
+
+### Docker Copilot
+
+Use **Docker for GitHub Copilot** to optimize container configurations:
+
+1. **Install**: VS Code Extensions → Search "Docker for GitHub Copilot" → Install.
+2. **Usage**:
+   - Ask: `@docker How can I optimize this Dockerfile for smaller image size?`
+   - Ask: `@docker Add a healthcheck to my nginx container`
+   - Ask: `@docker Scan this image for vulnerabilities`
+
+**This repo includes:**
+- Multi-stage `Dockerfile` (Node build → Nginx serve, ~25 MB final image).
+- `docker/nginx.conf` with gzip, SPA routing, security headers.
+- `.dockerignore` for minimal build context.
+- `shiftforge/docker-compose.yml` for PocketBase + Ollama backend.
+
+**Build & run locally:**
+```bash
+docker build -t dataos .
+docker run -p 8080:80 dataos
+# Open http://localhost:8080
+```
+
+### Branch Protection (Required Checks)
+
+Set up required status checks so that broken code cannot reach `main`:
+
+1. Go to **Settings → Branches → Branch protection rules → Add rule** for `main`.
+2. Enable:
+   - ✅ Require a pull request before merging (1+ approvals).
+   - ✅ Require status checks to pass: `code-scanning`, `build-and-test`.
+   - ✅ Require branches to be up to date before merging.
+   - ✅ Do not allow bypassing the above settings.
+
+**Quick CLI setup:**
+```bash
+gh api \
+  -X PUT \
+  -H "Accept: application/vnd.github+json" \
+  /repos/kostasuser01gr/Programm-Swifts-Internaltool/branches/main/protection \
+  -f required_status_checks[strict]=true \
+  -f 'required_status_checks[contexts][]=code-scanning' \
+  -f 'required_status_checks[contexts][]=build-and-test' \
+  -f enforce_admins=true \
+  -f restrictions=
+```
+
+### Org-Wide Reusable Workflow
+
+A reusable CodeQL workflow is provided in `org/reusable-codeql.yml`. To use it org-wide:
+
+1. Place it in your org's `.github` repo at `.github/workflows/reusable-codeql.yml`.
+2. Call it from any repo:
+
+```yaml
+jobs:
+  security:
+    uses: kostasuser01gr/.github/.github/workflows/reusable-codeql.yml@main
+    secrets: inherit
+```
+
+See `org/_org_checklist.md` for the full org-level onboarding checklist.
+
+---
+
 ## 🤝 Contributing
 
 This is an enterprise demonstration project showcasing modern architecture patterns. For production use, consider:
@@ -351,6 +457,8 @@ This is an enterprise demonstration project showcasing modern architecture patte
   - API specifications
   - Performance strategies
   - Security considerations
+- **[SECURITY.md](./SECURITY.md)** - Code scanning policy & vulnerability reporting
+- **[org/](./org/)** - Org-wide templates (reusable workflows, checklists)
 
 ---
 

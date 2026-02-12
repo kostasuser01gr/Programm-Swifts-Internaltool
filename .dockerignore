@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.vscode
+*.md
+!README.md
+shiftforge
+org
+docker
+Dockerfile
+.dockerignore
+.env*
