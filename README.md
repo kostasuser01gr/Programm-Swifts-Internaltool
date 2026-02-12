@@ -84,7 +84,7 @@
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │           CLIENT (React + TypeScript)            │
 ├─────────────────────────────────────────────────┤
@@ -108,6 +108,7 @@
 ### Technology Stack
 
 **Frontend:**
+
 - React 18.3+ with Hooks
 - TypeScript 5.0+ (Strict Mode)
 - Tailwind CSS v4
@@ -116,6 +117,7 @@
 - Sonner (Toast Notifications)
 
 **Planned Backend:**
+
 - Node.js + Express/Fastify
 - GraphQL (Apollo Server)
 - PostgreSQL 15+ (Primary Data)
@@ -127,7 +129,7 @@
 
 ## 📁 Project Structure
 
-```
+```text
 /src
   /app
     /components
@@ -155,24 +157,28 @@ README.md                  # This file
 ## 🎯 Use Cases
 
 ### Project Management
+
 - Track tasks with status, priority, assignees
 - Kanban boards for sprint planning
 - Calendar view for deadlines
 - Automated notifications for overdue items
 
 ### CRM & Sales
+
 - Manage leads, contacts, deals
 - Link companies to contacts
 - Rollup revenue by sales rep
 - Automation for follow-up emails
 
 ### Product Development
+
 - Feature roadmap planning
 - Bug tracking with priority
 - User feedback collection
 - Release planning calendar
 
 ### Operations
+
 - Inventory management
 - Asset tracking
 - Process documentation
@@ -230,36 +236,42 @@ The application will be available at `http://localhost:5173`
 ## 🎨 Key Components
 
 ### Sidebar
+
 - Workspace switcher
 - Base/table navigation
 - Quick actions (AI, Automations, Analytics)
 - Member management
 
 ### ViewToolbar
+
 - View type switcher (Grid, Kanban, Calendar)
 - Filter, sort, group controls
 - Share & export options
 - Collaboration indicators
 
 ### GridView
+
 - High-performance spreadsheet
 - Inline cell editing
 - Rich field type rendering
 - Row selection & bulk actions
 
 ### KanbanView
+
 - Drag-and-drop cards
 - Group by any select field
 - Quick add cards
 - Column management
 
 ### AIAssistant
+
 - Natural language interface
 - Contextual suggestions
 - Formula generation
 - Data analysis
 
 ### RecordDetail
+
 - Full record editing
 - All field types supported
 - Activity timeline
@@ -270,6 +282,7 @@ The application will be available at `http://localhost:5173`
 ## 🔮 Roadmap
 
 ### MVP (Current Phase)
+
 - [x] Core data model
 - [x] Multi-view system
 - [x] AI assistant foundation
@@ -278,6 +291,7 @@ The application will be available at `http://localhost:5173`
 - [ ] Real-time sync (mock)
 
 ### Phase 2: Intelligence
+
 - [ ] Advanced automation builder
 - [ ] Formula engine v2
 - [ ] AI-powered insights
@@ -285,6 +299,7 @@ The application will be available at `http://localhost:5173`
 - [ ] Predictive analytics
 
 ### Phase 3: Enterprise
+
 - [ ] Row-level permissions
 - [ ] Audit log viewer
 - [ ] Version history UI
@@ -292,6 +307,7 @@ The application will be available at `http://localhost:5173`
 - [ ] Compliance tools
 
 ### Phase 4: Scale
+
 - [ ] Backend implementation
 - [ ] Real-time collaboration
 - [ ] Offline support

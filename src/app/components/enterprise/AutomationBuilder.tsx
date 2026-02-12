@@ -15,17 +15,17 @@ interface AutomationBuilderProps {
 }
 
 const TRIGGER_TEMPLATES = [
-  { type: 'record_created' as const, label: 'When a record is created', icon: <Plus className="w-4 h-4" />, description: 'Triggers when a new record is added to the table' },
-  { type: 'record_updated' as const, label: 'When a record is updated', icon: <Check className="w-4 h-4" />, description: 'Triggers when any field in a record changes' },
-  { type: 'time_based' as const, label: 'At a scheduled time', icon: <Clock className="w-4 h-4" />, description: 'Triggers on a recurring schedule' },
-  { type: 'condition_met' as const, label: 'When conditions are met', icon: <AlertTriangle className="w-4 h-4" />, description: 'Triggers when field values match conditions' },
+  { type: 'recordCreated' as const, label: 'When a record is created', icon: <Plus className="w-4 h-4" />, description: 'Triggers when a new record is added to the table' },
+  { type: 'recordUpdated' as const, label: 'When a record is updated', icon: <Check className="w-4 h-4" />, description: 'Triggers when any field in a record changes' },
+  { type: 'scheduled' as const, label: 'At a scheduled time', icon: <Clock className="w-4 h-4" />, description: 'Triggers on a recurring schedule' },
+  { type: 'fieldChanged' as const, label: 'When conditions are met', icon: <AlertTriangle className="w-4 h-4" />, description: 'Triggers when field values match conditions' },
 ];
 
 const ACTION_TEMPLATES = [
-  { type: 'send_email' as const, label: 'Send an email', icon: <Mail className="w-4 h-4" />, description: 'Send an email notification' },
-  { type: 'update_record' as const, label: 'Update record', icon: <Check className="w-4 h-4" />, description: 'Update fields in the triggering record' },
-  { type: 'create_record' as const, label: 'Create a new record', icon: <Plus className="w-4 h-4" />, description: 'Create a record in the same or different table' },
-  { type: 'run_script' as const, label: 'Run a script', icon: <Hash className="w-4 h-4" />, description: 'Execute custom JavaScript' },
+  { type: 'sendEmail' as const, label: 'Send an email', icon: <Mail className="w-4 h-4" />, description: 'Send an email notification' },
+  { type: 'updateRecord' as const, label: 'Update record', icon: <Check className="w-4 h-4" />, description: 'Update fields in the triggering record' },
+  { type: 'createRecord' as const, label: 'Create a new record', icon: <Plus className="w-4 h-4" />, description: 'Create a record in the same or different table' },
+  { type: 'runScript' as const, label: 'Run a script', icon: <Hash className="w-4 h-4" />, description: 'Execute custom JavaScript' },
 ];
 
 export function AutomationBuilder({ automations, onSave, onToggle, onDelete, onClose }: AutomationBuilderProps) {
@@ -55,11 +55,11 @@ export function AutomationBuilder({ automations, onSave, onToggle, onDelete, onC
     const automation: Automation = {
       id: `auto-${Date.now()}`,
       name: newName,
+      tableId: '',
       trigger: { type: trigger.type, config: {} },
       actions: actions.map((a) => ({ type: a.type, config: {} })),
       enabled: true,
-      createdAt: new Date().toISOString(),
-      lastModifiedAt: new Date().toISOString(),
+      lastRunAt: new Date().toISOString(),
       runCount: 0,
     };
 

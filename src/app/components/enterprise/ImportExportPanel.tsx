@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Upload, Download, FileJson, FileSpreadsheet, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
@@ -96,7 +96,7 @@ export function ImportExportPanel({ isOpen, onClose, fields, records, tableName,
         for (let i = 1; i < lines.length; i++) {
           try {
             const values = parseCSVLine(lines[i]);
-            const fieldValues: Record<string, unknown> = {};
+            const fieldValues: { [fieldId: string]: FieldValue } = {};
             fieldMap.forEach((field, idx) => {
               if (idx < values.length) {
                 fieldValues[field.id] = parseFieldValue(field, values[idx]);
@@ -120,7 +120,7 @@ export function ImportExportPanel({ isOpen, onClose, fields, records, tableName,
           const arr = Array.isArray(data) ? data : [data];
           arr.forEach((item, i) => {
             try {
-              const fieldValues: Record<string, unknown> = {};
+              const fieldValues: { [fieldId: string]: FieldValue } = {};
               fields.forEach((field) => {
                 if (item[field.name] !== undefined) {
                   fieldValues[field.id] = item[field.name];
@@ -351,7 +351,7 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-function parseFieldValue(field: Field, value: string): unknown {
+function parseFieldValue(field: Field, value: string): FieldValue {
   if (value === '') return null;
   switch (field.type) {
     case 'number':

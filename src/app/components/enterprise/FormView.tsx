@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Send, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -67,7 +67,7 @@ export function FormView({ fields, tableName, onSubmit, formDescription, submitL
 
     const record: Partial<TableRecord> = {
       id: `rec-${Date.now()}`,
-      fields: formData as Record<string, unknown>,
+      fields: formData as { [fieldId: string]: FieldValue },
       createdTime: new Date().toISOString(),
       modifiedTime: new Date().toISOString(),
       version: 1,
@@ -170,6 +170,7 @@ export function FormView({ fields, tableName, onSubmit, formDescription, submitL
       case 'select':
         return (
           <select
+            title={`Select ${field.name}`}
             value={String(value || '')}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
             className={`w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-800 ${

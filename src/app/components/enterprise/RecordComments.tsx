@@ -38,7 +38,7 @@ export function RecordComments({ comments, currentUserId, currentUserName, onAdd
 
   const handleEdit = (comment: Comment) => {
     setEditingId(comment.id);
-    setEditText(comment.text);
+    setEditText(comment.content);
   };
 
   const handleSaveEdit = () => {
@@ -77,7 +77,7 @@ export function RecordComments({ comments, currentUserId, currentUserName, onAdd
             <div className="flex gap-3">
               {/* Avatar */}
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-[10px] text-white font-medium flex-shrink-0 mt-0.5">
-                {comment.userName.charAt(0)}
+                {comment.userId.charAt(0)}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -99,13 +99,13 @@ export function RecordComments({ comments, currentUserId, currentUserName, onAdd
                   /* Display mode */
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{comment.userName}</span>
-                      <span className="text-[10px] text-gray-400">{timeAgo(comment.createdAt)}</span>
-                      {comment.editedAt && (
+                      <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{comment.userId}</span>
+                      <span className="text-[10px] text-gray-400">{timeAgo(comment.timestamp)}</span>
+                      {comment.edited && (
                         <span className="text-[10px] text-gray-400 italic">(edited)</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5 whitespace-pre-wrap">{comment.text}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5 whitespace-pre-wrap">{comment.content}</p>
 
                     {/* Actions */}
                     {comment.userId === currentUserId && (

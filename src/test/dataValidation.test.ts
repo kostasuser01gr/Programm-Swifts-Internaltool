@@ -61,7 +61,6 @@ describe('Data Validation Engine', () => {
 
     const report = validateRecords(records, mockFields, rules);
     expect(report.totalErrors).toBe(1);
-    expect(report.results[0].type).toBeUndefined; // it's a result, not anomaly
     expect(report.results[0].message).toContain('Duplicate');
   });
 
