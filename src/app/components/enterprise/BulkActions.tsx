@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2, Edit3, Download, Tag, Copy, X, CheckSquare2 } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
@@ -9,7 +9,7 @@ interface BulkActionsProps {
   records: TableRecord[];
   fields: Field[];
   onDelete: (ids: string[]) => void;
-  onUpdateField: (ids: string[], fieldId: string, value: unknown) => void;
+  onUpdateField: (ids: string[], fieldId: string, value: FieldValue) => void;
   onExport: (ids: string[]) => void;
   onDuplicate: (ids: string[]) => void;
   onClearSelection: () => void;

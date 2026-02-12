@@ -319,7 +319,7 @@ The application will be available at `http://localhost:5173`
 ## 🆚 Comparison
 
 | Feature | DataOS | Airtable | Notion | Google Sheets |
-|---------|--------|----------|--------|---------------|
+| --------- | -------- | ---------- | -------- | --------------- |
 | **Data Model** | Relational | Relational | Hierarchical | Flat |
 | **Views** | 6+ types | 5 types | 3 types | Sheets |
 | **Automation** | Visual builder + AI | Basic | None | Apps Script |
@@ -334,15 +334,19 @@ The application will be available at `http://localhost:5173`
 ## 💡 Design Decisions
 
 ### Why Multi-View?
+
 Different people consume data differently. Engineers prefer grids, PMs love Kanban, executives need dashboards. One dataset, infinite perspectives.
 
 ### Why AI-Native?
+
 Every interaction should be intelligent. AI isn't a feature—it's the fabric that makes complex operations simple through natural language.
 
 ### Why Relational?
+
 Real business data has relationships. Orders have customers, tasks have assignees, products have categories. Flat spreadsheets break down at scale.
 
 ### Why TypeScript?
+
 Type safety prevents bugs, improves DX, and makes refactoring fearless. The small upfront cost pays massive dividends.
 
 ---
@@ -354,7 +358,7 @@ Type safety prevents bugs, improves DX, and makes refactoring fearless. The smal
 Every PR goes through automated security and quality checks before merge:
 
 | Check | What it does | Trigger |
-|-------|-------------|---------|
+| ------- | ------------- | --------- |
 | **CodeQL** | Static analysis for vulnerabilities (XSS, injection, etc.) | PR + weekly |
 | **Copilot Autofix** | AI-suggested patches for code scanning alerts | On alert |
 | **CI Tests** | Unit & integration tests via Vitest | PR + push |
@@ -497,16 +501,12 @@ Built with modern tools and inspired by the best:
 ## 📧 Contact
 
 For enterprise inquiries, architecture questions, or collaboration:
-- **Demo**: [Live Demo](#) (Coming Soon)
-- **Docs**: See ARCHITECTURE.md
-- **GitHub**: [Repository](#)
+- **Demo**: Coming Soon
+- **Docs**: See [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **GitHub**: See repository root
 
 ---
 
-<div align="center">
+### Built for the next generation of enterprise teams
 
-**Built for the next generation of enterprise teams**
-
-[Get Started](#-getting-started) · [View Demo](#) · [Read Docs](./ARCHITECTURE.md)
-
-</div>
+[Get Started](#-getting-started) · [Read Docs](./ARCHITECTURE.md)

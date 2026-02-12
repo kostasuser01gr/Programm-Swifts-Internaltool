@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Plus, MoreHorizontal } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ interface KanbanViewProps {
   records: TableRecord[];
   groupByFieldId: string;
   onRecordClick: (record: TableRecord) => void;
-  onCellChange: (recordId: string, fieldId: string, value: unknown) => void;
+  onCellChange: (recordId: string, fieldId: string, value: FieldValue) => void;
   members: { id: string; name: string; email: string }[];
 }
 

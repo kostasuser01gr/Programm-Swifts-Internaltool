@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Bot, Send, Sparkles, X, TrendingUp, Database, Zap, FileText } from 'lucide-react';
+import { Bot, Send, Sparkles, X, TrendingUp, Database, Zap } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
 
 interface AIAssistantProps {
   isOpen: boolean;

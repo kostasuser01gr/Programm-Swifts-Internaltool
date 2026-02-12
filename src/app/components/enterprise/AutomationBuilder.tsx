@@ -220,14 +220,14 @@ export function AutomationBuilder({ automations, onSave, onToggle, onDelete, onC
                       <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded font-medium">
                         Trigger
                       </span>
-                      {automation.trigger.type.replace(/_/g, ' ')}
+                      {automation.trigger.type.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim()}
                     </div>
                     {automation.actions.map((action, idx) => (
                       <div key={idx} className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400">
                         <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded font-medium">
                           Action
                         </span>
-                        {action.type.replace(/_/g, ' ')}
+                        {action.type.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim()}
                       </div>
                     ))}
                   </div>

@@ -1,17 +1,17 @@
-import { X, Calendar, User, Tag, Clock, History } from 'lucide-react';
+import { X, Calendar, User, Tag, History } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { toast } from 'sonner';
 
 interface RecordDetailProps {
   record: TableRecord;
   fields: Field[];
   onClose: () => void;
-  onFieldChange: (fieldId: string, value: unknown) => void;
+  onFieldChange: (fieldId: string, value: FieldValue) => void;
   members: { id: string; name: string; email: string }[];
 }
 

@@ -216,8 +216,8 @@ export interface AuditLog {
   action: string;
   entityType: 'record' | 'field' | 'table' | 'view' | 'automation';
   entityId: string;
-  changes?: Record<string, { old: FieldValue; new: FieldValue }>;
-  metadata?: Record<string, string>;
+  changes?: { [field: string]: { old: FieldValue; new: FieldValue } };
+  metadata?: { [key: string]: string };
 }
 
 export interface AIPrompt {

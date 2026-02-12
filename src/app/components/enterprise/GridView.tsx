@@ -4,7 +4,7 @@ import {
   Type, Hash, Tag, Tags, CalendarDays, CheckSquare, User,
   Paperclip, FunctionSquare, Link, AlertCircle,
 } from 'lucide-react';
-import { Field, Record as TableRecord } from '../../types';
+import { Field, FieldValue, Record as TableRecord } from '../../types';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
@@ -12,7 +12,7 @@ interface GridViewProps {
   fields: Field[];
   records: TableRecord[];
   onRecordClick: (record: TableRecord) => void;
-  onCellChange: (recordId: string, fieldId: string, value: unknown) => void;
+  onCellChange: (recordId: string, fieldId: string, value: FieldValue) => void;
   onAddRecord?: () => void;
   members: { id: string; name: string; email: string }[];
 }

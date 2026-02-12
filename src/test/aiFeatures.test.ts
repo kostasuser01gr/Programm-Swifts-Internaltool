@@ -5,7 +5,7 @@ import {
   detectAnomalies,
   summarizeData,
 } from '../app/hooks/useAIFeatures';
-import type { Field, Record } from '../app/types';
+import type { Field, FieldValue, Record } from '../app/types';
 
 const mockFields: Field[] = [
   { id: 'f1', name: 'Title', type: 'text', isPrimary: true },
@@ -20,7 +20,7 @@ const mockFields: Field[] = [
   { id: 'f5', name: 'Email', type: 'email' },
 ];
 
-const mkRecord = (id: string, fields: { [k: string]: any }): Record => ({
+const mkRecord = (id: string, fields: { [k: string]: FieldValue }): Record => ({
   id,
   fields,
   createdTime: new Date().toISOString(),

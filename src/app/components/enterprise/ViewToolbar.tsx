@@ -1,4 +1,5 @@
-import { Grid3x3, Kanban, Calendar, Image, Filter, SortAsc, Group, Share2, Download, ChevronDown, Plus, BarChart3, FileText, Search, Undo2, Redo2, FileInput, Settings2 } from 'lucide-react';
+import type { ComponentType } from 'react';
+import { Grid3x3, Kanban, Calendar, Image, Filter, SortAsc, Group, Share2, Plus, BarChart3, FileText, Search, Undo2, Redo2, FileInput, Settings2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { View, ViewType } from '../../types';
@@ -24,7 +25,7 @@ interface ViewToolbarProps {
   onFieldEditorClick?: () => void;
 }
 
-const viewIcons: Record<ViewType, any> = {
+const viewIcons: { [key in ViewType]: ComponentType<{ className?: string }> } = {
   grid: Grid3x3,
   kanban: Kanban,
   calendar: Calendar,

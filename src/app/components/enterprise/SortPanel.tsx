@@ -62,6 +62,7 @@ export function SortPanel({ fields, sorts, onSortsChange, onClose }: SortPanelPr
             <span className="text-xs text-gray-500 w-16">{index === 0 ? 'Sort by' : 'Then by'}</span>
 
             <select
+              title="Select field to sort"
               value={sort.fieldId}
               onChange={(e) => updateSort(index, { fieldId: e.target.value })}
               className="h-8 px-2 text-sm border border-gray-300 rounded-md"

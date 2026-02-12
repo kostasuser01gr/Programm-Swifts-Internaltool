@@ -20,6 +20,10 @@ const OPERATORS: { value: Filter['operator']; label: string }[] = [
   { value: 'isNotEmpty', label: 'is not empty' },
   { value: 'greaterThan', label: 'greater than' },
   { value: 'lessThan', label: 'less than' },
+  { value: 'is', label: 'is' },
+  { value: 'isNot', label: 'is not' },
+  { value: 'between', label: 'between' },
+  { value: 'isWithin', label: 'is within' },
 ];
 
 export function FilterPanel({ fields, filters, onFiltersChange, onClose }: FilterPanelProps) {
@@ -62,7 +66,8 @@ export function FilterPanel({ fields, filters, onFiltersChange, onClose }: Filte
     if (field?.type === 'select' && field.options?.choices) {
       return (
         <select
-          value={filter.value || ''}
+          title="Select filter value"
+          value={(filter.value as string) ?? ''}
           onChange={(e) => updateFilter(index, { value: e.target.value })}
           className="h-8 px-2 text-sm border border-gray-300 rounded-md"
         >
@@ -76,7 +81,7 @@ export function FilterPanel({ fields, filters, onFiltersChange, onClose }: Filte
 
     return (
       <Input
-        value={filter.value || ''}
+        value={(filter.value as string) ?? ''}
         onChange={(e) => updateFilter(index, { value: e.target.value })}
         placeholder="Value..."
         className="h-8 w-32 text-sm"
@@ -106,6 +111,7 @@ export function FilterPanel({ fields, filters, onFiltersChange, onClose }: Filte
             <span className="text-xs text-gray-500 w-12">{index === 0 ? 'Where' : 'And'}</span>
 
             <select
+              title="Select field to filter"
               value={filter.fieldId}
               onChange={(e) => updateFilter(index, { fieldId: e.target.value })}
               className="h-8 px-2 text-sm border border-gray-300 rounded-md"
@@ -116,6 +122,7 @@ export function FilterPanel({ fields, filters, onFiltersChange, onClose }: Filte
             </select>
 
             <select
+              title="Select filter operator"
               value={filter.operator}
               onChange={(e) => updateFilter(index, { operator: e.target.value as Filter['operator'] })}
               className="h-8 px-2 text-sm border border-gray-300 rounded-md"

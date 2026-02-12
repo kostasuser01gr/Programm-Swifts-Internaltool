@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Command, ArrowRight, Grid3x3, Kanban, Calendar, Image, BarChart3, FileText, Zap, Bot, X, Hash, Database } from 'lucide-react';
+import { Search, ArrowRight, Grid3x3, Kanban, Calendar, Image, BarChart3, FileText, Database } from 'lucide-react';
 import { ViewType } from '../../types';
 
 interface SearchAction {

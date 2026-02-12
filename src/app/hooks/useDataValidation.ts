@@ -164,11 +164,20 @@ const validators: { [K in ValidationRuleType]: (value: FieldValue, params: Valid
 
   custom: (value, params) => {
     if (!params.customFn) return null;
+    // Safe built-in validators instead of arbitrary code execution (new Function / eval).
+    // Only predefined validation functions are allowed to prevent XSS/injection.
+    const builtinValidators: { [name: string]: (v: FieldValue) => string | null } = {
+      isPositive: (v) => (typeof v === 'number' && v > 0 ? null : 'Value must be positive'),
+      isNonEmpty: (v) => (typeof v === 'string' && v.trim().length > 0 ? null : 'Value must not be empty'),
+      isInteger: (v) => (typeof v === 'number' && Number.isInteger(v) ? null : 'Value must be an integer'),
+      isAlpha: (v) => (typeof v === 'string' && /^[a-zA-Z]+$/.test(v) ? null : 'Value must contain only letters'),
+      isAlphanumeric: (v) => (typeof v === 'string' && /^[a-zA-Z0-9]+$/.test(v) ? null : 'Value must be alphanumeric'),
+    };
+    const validator = builtinValidators[params.customFn];
+    if (!validator) return `Unknown custom validator: "${params.customFn}"`;
     try {
-      const fn = new Function('value', params.customFn);
-      const result = fn(value);
+      const result = validator(value);
       if (typeof result === 'string') return result;
-      if (result === false) return params.message || 'Custom validation failed';
     } catch (e) {
       return `Custom validation error: ${e}`;
     }
