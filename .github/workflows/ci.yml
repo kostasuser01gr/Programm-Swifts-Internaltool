@@ -42,6 +42,10 @@ jobs:
       - name: TypeScript check
         run: pnpm typecheck
 
+      - name: ESLint
+        run: pnpm lint
+        continue-on-error: true
+
   # ── Dependency Audit ─────────────────────────────────
   audit:
     name: Security Audit

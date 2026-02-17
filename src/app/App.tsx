@@ -1,44 +1,58 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router';
 import { Calendar, Search as SearchIcon, Undo2, Redo2, Bell, Settings2 } from 'lucide-react';
 import { Sidebar } from './components/enterprise/Sidebar';
 import { ViewToolbar } from './components/enterprise/ViewToolbar';
-import { GridView } from './components/enterprise/GridView';
-import { KanbanView } from './components/enterprise/KanbanView';
-import { CalendarView } from './components/enterprise/CalendarView';
-import { GalleryView } from './components/enterprise/GalleryView';
-import { TimelineView } from './components/enterprise/TimelineView';
-import { FormView } from './components/enterprise/FormView';
-import { AnalyticsDashboard } from './components/enterprise/AnalyticsDashboard';
-import { AIAssistant } from './components/enterprise/AIAssistant';
-import { RecordDetail } from './components/enterprise/RecordDetail';
-import { FilterPanel } from './components/enterprise/FilterPanel';
-import { SortPanel } from './components/enterprise/SortPanel';
-import { GroupPanel } from './components/enterprise/GroupPanel';
-import { SearchCommand } from './components/enterprise/SearchCommand';
-import { NotificationCenter } from './components/enterprise/NotificationCenter';
-import { BulkActions } from './components/enterprise/BulkActions';
-import { ImportExportPanel } from './components/enterprise/ImportExportPanel';
-import { AutomationBuilder } from './components/enterprise/AutomationBuilder';
-import { FieldEditor } from './components/enterprise/FieldEditor';
 import { ErrorBoundary } from './components/enterprise/ErrorBoundary';
-import { mockWorkspace, mockBase, mockTable, mockAutomations, mockNotifications, mockComments } from './data/mockData';
+import { useEnterpriseData } from './hooks/useEnterpriseData';
 import { Base, Table, View, Record as TableRecord, Filter, Sort, Group, Automation, Notification, FieldValue } from './types';
 import { useUndoRedo } from './hooks/useUndoRedo';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSearch } from './hooks/useSearch';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
+import { SkeletonTable, Spinner } from './design-system';
+
+// ─── Lazy-loaded views (reduce main chunk by ~150KB) ─────────
+const GridView = lazy(() => import('./components/enterprise/GridView').then(m => ({ default: m.GridView })));
+const KanbanView = lazy(() => import('./components/enterprise/KanbanView').then(m => ({ default: m.KanbanView })));
+const CalendarView = lazy(() => import('./components/enterprise/CalendarView').then(m => ({ default: m.CalendarView })));
+const GalleryView = lazy(() => import('./components/enterprise/GalleryView').then(m => ({ default: m.GalleryView })));
+const TimelineView = lazy(() => import('./components/enterprise/TimelineView').then(m => ({ default: m.TimelineView })));
+const FormView = lazy(() => import('./components/enterprise/FormView').then(m => ({ default: m.FormView })));
+const AnalyticsDashboard = lazy(() => import('./components/enterprise/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
+const AIAssistant = lazy(() => import('./components/enterprise/AIAssistant').then(m => ({ default: m.AIAssistant })));
+const RecordDetail = lazy(() => import('./components/enterprise/RecordDetail').then(m => ({ default: m.RecordDetail })));
+const FilterPanel = lazy(() => import('./components/enterprise/FilterPanel').then(m => ({ default: m.FilterPanel })));
+const SortPanel = lazy(() => import('./components/enterprise/SortPanel').then(m => ({ default: m.SortPanel })));
+const GroupPanel = lazy(() => import('./components/enterprise/GroupPanel').then(m => ({ default: m.GroupPanel })));
+const SearchCommand = lazy(() => import('./components/enterprise/SearchCommand').then(m => ({ default: m.SearchCommand })));
+const NotificationCenter = lazy(() => import('./components/enterprise/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
+const BulkActions = lazy(() => import('./components/enterprise/BulkActions').then(m => ({ default: m.BulkActions })));
+const ImportExportPanel = lazy(() => import('./components/enterprise/ImportExportPanel').then(m => ({ default: m.ImportExportPanel })));
+const AutomationBuilder = lazy(() => import('./components/enterprise/AutomationBuilder').then(m => ({ default: m.AutomationBuilder })));
+const FieldEditor = lazy(() => import('./components/enterprise/FieldEditor').then(m => ({ default: m.FieldEditor })));
+
+// Inline loading fallback for lazy views
+const ViewLoading = () => (
+  <div className="flex-1 flex items-center justify-center" style={{ minHeight: 200 }}>
+    <SkeletonTable rows={8} cols={5} />
+  </div>
+);
 
 export default function App() {
   const navigate = useNavigate();
-  const [workspace] = useState(mockWorkspace);
-  const [currentBase, setCurrentBase] = useState<Base | null>(mockBase);
-  const [currentTable, setCurrentTable] = useState<Table | null>(mockTable);
-  const [currentView, setCurrentView] = useState<View>(mockTable.views[0]);
+  const {
+    workspace, currentBase, currentTable, tableData, automations, notifications,
+    isLoading, isApiMode,
+    setCurrentBase, setCurrentTable, setTableData, setAutomations, setNotifications,
+    createRecord: apiCreateRecord, updateRecord: apiUpdateRecord, deleteRecord: apiDeleteRecord,
+    bulkDeleteRecords: apiBulkDelete,
+  } = useEnterpriseData();
+
+  const [currentView, setCurrentView] = useState<View>(tableData.views[0]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<TableRecord | null>(null);
-  const [tableData, setTableData] = useState(mockTable);
 
   // Panel visibility
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -52,11 +66,7 @@ export default function App() {
   const [showAnalytics, setShowAnalytics] = useState(false);
 
   // Notifications
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // Automations
-  const [automations, setAutomations] = useState<Automation[]>(mockAutomations);
 
   // Bulk selection
   const [selectedRecords, setSelectedRecords] = useState<string[]>([]);
@@ -185,8 +195,8 @@ export default function App() {
       undo: () => applyChange(oldValue as FieldValue),
       redo: () => applyChange(value),
     });
-    applyChange(value);
-    toast.success('Record updated');
+    // Use API update (handles both mock and API modes)
+    apiUpdateRecord(recordId, fieldId, value);
   };
 
   const handleRecordClick = (record: TableRecord) => {
@@ -198,32 +208,19 @@ export default function App() {
   };
 
   const handleAddRecord = () => {
-    const newRecord: TableRecord = {
-      id: `rec-${Date.now()}`,
-      fields: {},
-      createdTime: new Date().toISOString(),
-      createdBy: workspace.members[0]?.id || 'unknown',
-      modifiedTime: new Date().toISOString(),
-      modifiedBy: workspace.members[0]?.id || 'unknown',
-      version: 1,
-    };
+    const fields: Record<string, FieldValue> = {};
     tableData.fields.forEach((field) => {
-      if (field.type === 'checkbox') newRecord.fields[field.id] = false;
-      else if (field.type === 'multiselect') newRecord.fields[field.id] = [];
-      else newRecord.fields[field.id] = '';
+      if (field.type === 'checkbox') fields[field.id] = false;
+      else if (field.type === 'multiselect') fields[field.id] = [];
+      else fields[field.id] = '';
     });
-    pushAction({
-      type: 'recordCreate',
-      description: 'Add new record',
-      undo: () => setTableData((prev) => ({ ...prev, records: prev.records.filter((r) => r.id !== newRecord.id) })),
-      redo: () => setTableData((prev) => ({ ...prev, records: [...prev.records, newRecord] })),
+
+    // Use API create (handles both mock and API modes)
+    apiCreateRecord(fields).then(() => {
+      // Select the newly created record if it was added
+      const latest = tableData.records[tableData.records.length - 1];
+      if (latest) setSelectedRecord(latest);
     });
-    setTableData((prev) => ({
-      ...prev,
-      records: [...prev.records, newRecord],
-    }));
-    setSelectedRecord(newRecord);
-    toast.success('New record created');
   };
 
   const handleRecordFieldChange = (fieldId: string, value: FieldValue) => {
@@ -265,12 +262,9 @@ export default function App() {
 
   // Bulk action handlers
   const handleBulkDelete = useCallback((ids: string[]) => {
-    setTableData((prev) => ({
-      ...prev,
-      records: prev.records.filter((r) => !ids.includes(r.id)),
-    }));
+    apiBulkDelete(ids);
     setSelectedRecords([]);
-  }, []);
+  }, [apiBulkDelete]);
 
   const handleBulkUpdateField = useCallback((ids: string[], fieldId: string, value: FieldValue) => {
     setTableData((prev) => ({
@@ -447,6 +441,7 @@ export default function App() {
         />
 
         {/* Filter/Sort/Group Panels */}
+        <Suspense fallback={null}>
         {showFilterPanel && (
           <FilterPanel
             fields={tableData.fields}
@@ -471,8 +466,10 @@ export default function App() {
             onClose={() => setShowGroupPanel(false)}
           />
         )}
+        </Suspense>
 
         <ErrorBoundary fallbackTitle="View failed to render">
+          <Suspense fallback={<ViewLoading />}>
           {/* Analytics dashboard */}
           {showAnalytics && (
             <AnalyticsDashboard
@@ -556,10 +553,12 @@ export default function App() {
               submitLabel={currentView.config?.formSubmitLabel}
             />
           )}
+          </Suspense>
         </ErrorBoundary>
       </div>
 
       {/* Right-side panels */}
+      <Suspense fallback={null}>
       {selectedRecord && !showNotifications && !showImportExport && !showAutomations && !showFieldEditor && (
         <ErrorBoundary fallbackTitle="Record detail failed to load">
           <RecordDetail
@@ -621,8 +620,10 @@ export default function App() {
           />
         </ErrorBoundary>
       )}
+      </Suspense>
 
       {/* Global overlays */}
+      <Suspense fallback={null}>
       <SearchCommand
         isOpen={showSearchCommand}
         onClose={() => setShowSearchCommand(false)}
@@ -645,39 +646,19 @@ export default function App() {
         onDuplicate={handleBulkDuplicate}
         onClearSelection={() => setSelectedRecords([])}
       />
+      </Suspense>
 
       <Toaster />
 
       {/* Floating Chat Button */}
       <button
         onClick={() => navigate('/chat')}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full border-none text-white text-2xl cursor-pointer flex items-center justify-center z-[9999] transition-transform duration-200 hover:scale-110"
         style={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          width: 56,
-          height: 56,
-          borderRadius: '50%',
-          border: 'none',
           background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-          color: '#fff',
-          fontSize: 26,
-          cursor: 'pointer',
           boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          transition: 'transform 0.2s, box-shadow 0.2s',
         }}
-        onMouseEnter={e => {
-          e.currentTarget.style.transform = 'scale(1.1)';
-          e.currentTarget.style.boxShadow = '0 6px 28px rgba(99,102,241,0.5)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)';
-        }}
+        aria-label="Open Station Chat"
         title="Station Chat"
       >
         💬

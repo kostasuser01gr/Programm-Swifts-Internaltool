@@ -1,13 +1,17 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuthStore } from '../../store/authStore';
+import { useDataMode } from '../../store/dataMode';
 import { PinLogin } from '../auth/PinLogin';
+import { AuthGate } from '../auth/AuthGate';
 import { NavBar } from './NavBar';
 import { QuickActions } from './QuickActions';
+import { DataModeIndicator } from '../../design-system';
 
 // ─── Platform Shell ──────────────────────────────────────────
 // Wraps the entire app with auth gate and navigation.
-// When not authenticated, shows PIN login.
+// When API is available, uses email/password auth via AuthGate.
+// When in demo/mock mode, uses PIN login.
 // When authenticated, shows content + bottom nav + quick actions.
 
 interface Props {
@@ -16,12 +20,14 @@ interface Props {
 
 export function PlatformShell({ children }: Props) {
   const { isAuthenticated, currentProfile, checkSessionExpiry, session } = useAuthStore();
+  const dataMode = useDataMode();
   const navigate = useNavigate();
   const location = useLocation();
   const [sessionWarning, setSessionWarning] = useState(false);
 
-  // ── Session expiry enforcement (check every 30s) ──
+  // ── Session expiry enforcement (check every 30s) — only for mock/PIN mode ──
   useEffect(() => {
+    if (dataMode.mode === 'api') return; // API mode handles its own sessions
     if (!isAuthenticated || !session) return;
     const interval = setInterval(() => {
       const expired = checkSessionExpiry();
@@ -31,7 +37,7 @@ export function PlatformShell({ children }: Props) {
       setSessionWarning(remaining > 0 && remaining < 15 * 60 * 1000);
     }, 30_000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, session, checkSessionExpiry, navigate]);
+  }, [isAuthenticated, session, checkSessionExpiry, navigate, dataMode.mode]);
 
   const handleLogin = useCallback(() => {
     // After login, navigate to user's preferred default view
@@ -58,13 +64,53 @@ export function PlatformShell({ children }: Props) {
     }
   }, [navigate]);
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && dataMode.mode === 'mock') {
     return <PinLogin onLogin={handleLogin} />;
+  }
+
+  // In API mode, use the AuthGate for authentication
+  if (dataMode.mode === 'api' || dataMode.mode === 'checking') {
+    return (
+      <AuthGate
+        fallbackLogin={<PinLogin onLogin={handleLogin} />}
+        onLogin={handleLogin}
+      >
+        <ShellContent
+          sessionWarning={sessionWarning}
+          isFullScreenRoute={['/washer'].includes(location.pathname)}
+          dataMode={dataMode.mode}
+          onAction={handleQuickAction}
+        >
+          {children}
+        </ShellContent>
+      </AuthGate>
+    );
   }
 
   // Full-screen pages that handle their own navigation
   const isFullScreenRoute = ['/washer'].includes(location.pathname);
 
+  return (
+    <ShellContent
+      sessionWarning={sessionWarning}
+      isFullScreenRoute={isFullScreenRoute}
+      dataMode={dataMode.mode}
+      onAction={handleQuickAction}
+    >
+      {children}
+    </ShellContent>
+  );
+}
+
+// ─── Shell Content (shared between API and mock modes) ──────
+
+function ShellContent({ children, sessionWarning, isFullScreenRoute, dataMode, onAction }: {
+  children: React.ReactNode;
+  sessionWarning: boolean;
+  isFullScreenRoute: boolean;
+  dataMode: 'api' | 'mock' | 'checking';
+  onAction: (id: string) => void;
+}) {
   return (
     <>
       {sessionWarning && (
@@ -81,7 +127,11 @@ export function PlatformShell({ children }: Props) {
         {children}
       </div>
       {!isFullScreenRoute && <NavBar />}
-      <QuickActions onAction={handleQuickAction} />
+      <QuickActions onAction={onAction} />
+      {/* Data mode indicator */}
+      <div style={{ position: 'fixed', bottom: 76, left: 12, zIndex: 100 }}>
+        <DataModeIndicator mode={dataMode} />
+      </div>
     </>
   );
 }

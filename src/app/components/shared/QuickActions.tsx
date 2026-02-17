@@ -144,7 +144,7 @@ export function QuickActions({ onAction, chatUnread = 0 }: Props) {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        isOpen ? closeMenu() : openMenu();
+        if (isOpen) { closeMenu(); } else { openMenu(); }
         return;
       }
       if (e.key === 'Escape' && isOpen) { e.preventDefault(); closeMenu(); return; }

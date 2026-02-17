@@ -91,7 +91,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
           </select>
         );
 
-      case 'multiselect':
+      case 'multiselect': {
         const selected = Array.isArray(value) ? value : [];
         return (
           <div className="space-y-2">
@@ -118,6 +118,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
             ))}
           </div>
         );
+      }
 
       case 'user':
         return (

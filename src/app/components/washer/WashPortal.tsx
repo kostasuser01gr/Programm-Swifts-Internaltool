@@ -128,7 +128,7 @@ function MiniChat() {
   const unread = useMemo(() => msgs.filter(m => m.from === 'station').length, [msgs]);
 
   useEffect(() => {
-    try { localStorage.setItem('wash-portal-chat', JSON.stringify(msgs.slice(-100))); } catch {}
+    try { localStorage.setItem('wash-portal-chat', JSON.stringify(msgs.slice(-100))); } catch { /* ignore storage errors */ }
   }, [msgs]);
 
   useEffect(() => {

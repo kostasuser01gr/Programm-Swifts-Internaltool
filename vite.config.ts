@@ -35,7 +35,6 @@ export default defineConfig({
             '@radix-ui/react-popover',
           ],
           'vendor-charts': ['recharts'],
-          'vendor-mui': ['@mui/material', '@mui/icons-material'],
         },
       },
     },

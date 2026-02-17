@@ -74,7 +74,7 @@ export function ImportExportPanel({ isOpen, onClose, fields, records, tableName,
 
     try {
       const text = await file.text();
-      let importedRecords: Partial<TableRecord>[] = [];
+      const importedRecords: Partial<TableRecord>[] = [];
       let errors = 0;
 
       if (format === 'csv') {

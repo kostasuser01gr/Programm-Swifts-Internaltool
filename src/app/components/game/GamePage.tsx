@@ -603,6 +603,19 @@ function GamePlay() {
   const [showResult, setShowResult] = useState(false);
   const [answered, setAnswered] = useState(false);
 
+  const handleExpire = useCallback(() => {
+    if (!answered) {
+      setAnswered(true);
+      setShowResult(true);
+      setTimeout(() => {
+        skipQuestion();
+        setSelectedOption(null);
+        setShowResult(false);
+        setAnswered(false);
+      }, 1500);
+    }
+  }, [answered, skipQuestion]);
+
   if (!currentSession) return null;
 
   const question = currentSession.questions[currentSession.currentIndex];
@@ -625,19 +638,6 @@ function GamePlay() {
       setAnswered(false);
     }, 1500);
   };
-
-  const handleExpire = useCallback(() => {
-    if (!answered) {
-      setAnswered(true);
-      setShowResult(true);
-      setTimeout(() => {
-        skipQuestion();
-        setSelectedOption(null);
-        setShowResult(false);
-        setAnswered(false);
-      }, 1500);
-    }
-  }, [answered, skipQuestion]);
 
   return (
     <div style={g.page}>
