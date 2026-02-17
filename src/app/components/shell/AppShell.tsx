@@ -5,7 +5,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import {
-  LayoutDashboard, MessageSquare, Car, Droplets, Gamepad2, Database,
+  LayoutDashboard, MessageSquare, Car, Droplets, Gamepad2, Database, ShieldCheck,
   Settings, ChevronLeft, ChevronRight, Search, Bell, Command,
   LogOut, Moon, Sun, Monitor, User, PanelRightClose,
 } from 'lucide-react';
@@ -43,6 +43,7 @@ function useNavItems(): NavItem[] {
     { id: 'fleet', path: '/fleet', label: 'Fleet', icon: Car },
     { id: 'washer', path: '/washer', label: 'Wash Ops', icon: Droplets },
     { id: 'game', path: '/game', label: 'Training', icon: Gamepad2 },
+    { id: 'admin', path: '/admin', label: 'Admin', icon: ShieldCheck },
     { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
   ];
 }

@@ -12,28 +12,30 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     CLIENT LAYER (React SPA)                     │
+│                  CLIENT LAYER (React SPA — Vite)                 │
 ├─────────────────────────────────────────────────────────────────┤
-│  View Engine │  Formula Engine │  Automation Builder │  AI Chat │
-│  Grid │ Kanban │ Calendar │ Gallery │ Timeline │ Forms │ Charts │
+│  AppShell │ CommandPalette │ InspectorPanel │ NotificationCenter│
+│  Grid │ Kanban │ Calendar │ Gallery │ Dashboard │ Admin │ Chat  │
+│  ThemeProvider (oklch / dark-first) │ Zustand │ shadcn/ui (49)  │
 └─────────────────────────────────────────────────────────────────┘
-                                ↕
+                          ↕  HTTPS / REST
 ┌─────────────────────────────────────────────────────────────────┐
-│                    API GATEWAY & SERVICES                        │
+│              CLOUDFLARE WORKERS (Hono v4 REST API)              │
 ├─────────────────────────────────────────────────────────────────┤
-│  GraphQL/REST API │  WebSocket Server │  Auth Service           │
-│  Real-time Sync   │  Permission Engine │  Audit Logger          │
-│  Automation Engine│  AI Integration    │  File Storage          │
+│  Auth (PBKDF2 sessions) │  RBAC (admin/user) │  Rate Limiter   │
+│  CRUD (workspaces/tables/records) │  Audit Logger              │
+│  Fail-Closed Guards (80% free-tier cap → 503)                  │
 └─────────────────────────────────────────────────────────────────┘
-                                ↕
+                          ↕
 ┌─────────────────────────────────────────────────────────────────┐
 │                       DATA PERSISTENCE                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  PostgreSQL (Primary)  │  Redis (Cache/Realtime)                │
-│  S3 (File Storage)     │  Elasticsearch (Search)                │
-│  TimescaleDB (Analytics)│ Vector DB (AI Embeddings)             │
+│  Cloudflare D1 (SQLite — 5M reads/100K writes per day)         │
+│  Cloudflare KV (rate limits, cache — 100K reads/1K writes/day) │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+> **Note**: The original design referenced PostgreSQL, Redis, S3, Elasticsearch, and TimescaleDB. The production implementation uses Cloudflare D1 (SQLite) + KV on the Workers Free plan for zero-cost operation. The data model and API surface remain equivalent.
 
 ### Data Model Hierarchy
 
@@ -75,30 +77,29 @@ Workspace (Tenant)
 // Core
 - React 18.3+ (with Concurrent Features)
 - TypeScript 5.0+ (Strict Mode)
-- Vite (Build Tool)
+- Vite 6.3 (Build Tool)
 
 // State Management
-- Zustand / Jotai (Atomic State)
-- TanStack Query (Server State & Caching)
-- Immer (Immutable Updates)
-
-// Grid & Visualization
-- AG Grid Enterprise (High-performance grid)
-- Recharts (Charts & Analytics)
-- FullCalendar (Calendar View)
-- React Beautiful DnD (Kanban)
-
-// Real-time
-- Socket.io Client
-- Y.js (CRDT for collaborative editing)
+- Zustand 5 (Global State)
+- TanStack Query (Server State & Caching — planned)
 
 // UI Components
-- Radix UI (Headless Components)
-- Tailwind CSS v4
-- Framer Motion (Animations)
+- shadcn/ui (49 components — Radix UI primitives)
+- Tailwind CSS v4.1 (oklch theme tokens)
+- Recharts (Charts & Analytics)
+- lucide-react (Icons)
+- sonner (Toast notifications)
+
+// Shell
+- AppShell (sidebar + topbar + inspector)
+- CommandPalette (⌘K global search)
+- NotificationCenter (sheet inbox)
+- ThemeProvider (dark/light CSS class toggle)
+
+// Routing
+- react-router v7.13 (lazy routes)
 
 // Forms & Validation
-- React Hook Form
 - Zod (Schema Validation)
 ```
 
@@ -108,6 +109,15 @@ Workspace (Tenant)
 /src
   /app
     /components
+      /shell           # Premium shell components
+        - AppShell.tsx       (sidebar + topbar + inspector layout)
+        - DashboardPage.tsx  (KPI cards, sparklines, heatmap)
+        - CommandPalette.tsx (⌘K global search + actions)
+        - InspectorPanel.tsx (tabbed record details)
+        - NotificationCenter.tsx (sheet-based inbox)
+        - LoginPage.tsx      (premium auth UI)
+        - AdminPage.tsx      (users + audit log)
+        - ErrorPages.tsx     (404 + 500)
       /enterprise       # Core platform components
         - Sidebar.tsx
         - ViewToolbar.tsx
@@ -115,15 +125,18 @@ Workspace (Tenant)
         - KanbanView.tsx
         - RecordDetail.tsx
         - AIAssistant.tsx
-      /views           # View renderers
-      /fields          # Field type components
-      /automation      # Automation builder
-      /ui              # Design system components
+      /auth            # Authentication gate
+        - AuthGate.tsx
+        - PinLogin.tsx  
+      /ui              # shadcn/ui design system (49 components)
     /hooks             # Custom React hooks
-    /stores            # State management
+    /stores            # Zustand state stores
+    /api               # API client + auth store
+    /theme             # ThemeProvider
     /utils             # Utilities
     /types             # TypeScript types
     /data              # Mock/seed data
+    /i18n              # Internationalization (el/en/de/fr)
 ```
 
 ### Performance Optimizations
@@ -162,9 +175,37 @@ const updateCell = useMutation({
 
 ---
 
-## 3. BACKEND ARCHITECTURE
+## 3. BACKEND ARCHITECTURE (Cloudflare Workers)
 
-### Technology Stack
+> **Implementation**: The production backend runs on Cloudflare Workers Free plan. The theoretical GraphQL/REST/WebSocket architecture described below represents the target design; the current deployment uses a REST-only Hono API.
+
+### Technology Stack (Deployed)
+
+```typescript
+// Runtime
+- Cloudflare Workers (V8 isolates, 10ms CPU/request)
+- TypeScript
+
+// Framework
+- Hono v4 (lightweight web framework)
+- REST API (JSON over HTTPS)
+
+// Database
+- Cloudflare D1 (SQLite — 5M reads / 100K writes / day free)
+- Cloudflare KV (rate limiting, cache — 100K reads / 1K writes / day free)
+
+// Authentication
+- PBKDF2-SHA256 password hashing
+- Session tokens (stored in D1)
+- Role-based access control (admin / user)
+
+// Safety
+- Fail-closed guards at 80% of free-tier limits
+- Per-IP rate limiting via KV (60 req/min)
+- Usage counters exposed via admin API
+```
+
+### Technology Stack (Target Design)
 
 ```typescript
 // Runtime
@@ -250,7 +291,9 @@ GET    /api/v1/workspaces/:workspaceId/audit-logs
 POST   /api/v1/ai/query
 ```
 
-### Database Schema (PostgreSQL)
+### Database Schema (D1 / SQLite — Deployed)
+
+> The production database uses Cloudflare D1 (SQLite). The schema below shows the PostgreSQL equivalent from the original design; D1 migrations in `worker/migrations/` implement an equivalent schema using SQLite syntax.
 
 ```sql
 -- Core Tables
@@ -1057,6 +1100,19 @@ test('user can create and edit record', async ({ page }) => {
 2. **AI-Native**: Intelligence embedded in every interaction
 3. **Enterprise-Ready**: Security, scale, compliance out of the box
 4. **Developer-First**: Extensible, customizable, API-driven
+5. **Zero-Cost Deploy**: Full production stack on Vercel Hobby + Cloudflare Workers Free
+
+**Deployed Stack (as of 2025):**
+
+| Layer | Technology | Cost |
+|-------|-----------|------|
+| Frontend | React 18.3 + Vite 6 + Tailwind v4 + shadcn/ui | — |
+| Hosting (FE) | Vercel Hobby / Cloudflare Pages | €0 |
+| Backend | Cloudflare Workers (Hono v4) | €0 |
+| Database | Cloudflare D1 (SQLite) | €0 |
+| Cache | Cloudflare KV | €0 |
+| CI/CD | GitHub Actions (free tier) | €0 |
+| Security | CodeQL + Copilot Autofix | €0 |
 
 **Success Metrics:**
 - Time to value: < 1 hour from signup to first automation
@@ -1065,3 +1121,11 @@ test('user can create and edit record', async ({ page }) => {
 - ROI: Replace 5+ tools, save $50k+/year per 100 employees
 
 This architecture provides a solid foundation for building a world-class enterprise data platform that can scale from startups to Fortune 500 companies.
+
+**Documentation Index:**
+- [`docs/AUDIT.md`](docs/AUDIT.md) — Project audit & refactor plan
+- [`docs/COST_SAFETY.md`](docs/COST_SAFETY.md) — Free-tier safety guardrails
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Deploy guide (Vercel + Workers)
+- [`docs/UI_SPEC.md`](docs/UI_SPEC.md) — Design tokens & UI specification
+- [`SECURITY.md`](SECURITY.md) — Security model & code scanning
+

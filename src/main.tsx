@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router";
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback, useEffect } from "react";
 import { PlatformShell, AppShell } from "./app/components/shell/AppShell.tsx";
 import { ErrorBoundary } from "./app/components/shared/ErrorBoundary.tsx";
 import { ConnectivityMonitor } from "./app/components/shared/ConnectivityMonitor.tsx";
@@ -8,6 +8,7 @@ import { ToastProvider } from "./app/components/shared/ToastProvider.tsx";
 import { I18nProvider } from "./app/i18n/I18nProvider.tsx";
 import { ThemeProvider } from "./app/theme/ThemeProvider.tsx";
 import { Toaster } from "./app/components/ui/sonner.tsx";
+import { CommandPalette } from "./app/components/shell/CommandPalette.tsx";
 import "./styles/index.css";
 
 // ── Lazy-loaded pages ─────────────────────────────────────
@@ -19,7 +20,7 @@ const WasherApp = lazy(() => import("./app/components/washer/WasherApp.tsx"));
 const WashPortal = lazy(() => import("./app/components/washer/WashPortal.tsx"));
 const SettingsPanel = lazy(() => import("./app/components/settings/SettingsPanel.tsx"));
 const GamePage = lazy(() => import("./app/components/game/GamePage.tsx"));
-const SearchCommand = lazy(() => import("./app/components/enterprise/SearchCommand.tsx").then(m => ({ default: m.SearchCommand })));
+const AdminPage = lazy(() => import("./app/components/shell/AdminPage.tsx"));
 
 // ── Error pages ───────────────────────────────────────────
 import { NotFoundPage } from "./app/components/shell/ErrorPages.tsx";
@@ -46,6 +47,18 @@ function AppRoutes() {
     setShowCommandPalette(true);
   }, []);
 
+  // Global ⌘K / Ctrl+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   if (isPublicRoute) {
     return (
       <Routes>
@@ -67,6 +80,7 @@ function AppRoutes() {
             <Route path="/washer" element={<WasherApp />} />
             <Route path="/settings" element={<SettingsPanel />} />
             <Route path="/game" element={<GamePage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/data" element={<DataApp />} />
             <Route path="/base/:baseId" element={<DataApp />} />
             <Route path="/base/:baseId/table/:tableId" element={<DataApp />} />
@@ -77,16 +91,10 @@ function AppRoutes() {
       </AppShell>
 
       {/* Global command palette */}
-      <Suspense fallback={null}>
-        <SearchCommand
-          isOpen={showCommandPalette}
-          onClose={() => setShowCommandPalette(false)}
-          actions={[]}
-          onSearch={() => {}}
-          searchResults={[]}
-          onResultClick={() => {}}
-        />
-      </Suspense>
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+      />
 
       <Toaster />
     </PlatformShell>
