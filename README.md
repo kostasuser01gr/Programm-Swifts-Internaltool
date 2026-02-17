@@ -466,11 +466,138 @@ See `org/_org_checklist.md` for the full org-level onboarding checklist.
 
 This is an enterprise demonstration project showcasing modern architecture patterns. For production use, consider:
 
-1. **Backend Implementation**: Add PostgreSQL, Redis, GraphQL server
-2. **Authentication**: Integrate Auth0, Clerk, or similar
+1. **Backend Implementation**: Cloudflare Workers + D1 (SQLite) backend included in `worker/`
+2. **Authentication**: PBKDF2-SHA256 session-based auth with role management
 3. **Real-time**: Implement WebSocket with Y.js CRDT
 4. **Testing**: Add unit, integration, and E2E tests
-5. **Deployment**: Set up CI/CD, monitoring, logging
+5. **Deployment**: Frontend on Vercel Hobby + Backend on Cloudflare Workers Free (zero cost)
+
+---
+
+## ☁️ Backend (Cloudflare Workers)
+
+The `worker/` directory contains a full REST API backend powered by **Hono** (web framework), **Cloudflare D1** (SQLite), and **KV** (rate limiting & cache). All services run on the Cloudflare Workers Free plan — **€0 always**.
+
+### Architecture
+
+| Layer           | Technology          | Free Tier Limit              |
+|-----------------|---------------------|------------------------------|
+| Web framework   | Hono v4             | —                            |
+| Database        | Cloudflare D1       | 5M reads / 100K writes / day |
+| Cache & limits  | Cloudflare KV       | 100K reads / 1K writes / day |
+| Auth            | PBKDF2 + sessions   | —                            |
+| Rate limiting   | KV-backed per-IP    | 60 req/min                   |
+
+### Fail-Closed Guards
+
+The backend enforces **fail-closed** limits at **80%** of free-tier capacity. When daily usage approaches the cap, the API returns `503 Service Limit Reached` instead of risking billing overages. Usage is tracked via KV counters and exposed in the admin dashboard.
+
+### API Endpoints
+
+```
+POST   /api/auth/register      — Create account (first user = admin)
+POST   /api/auth/login          — Login (session cookie + Bearer token)
+POST   /api/auth/logout         — End session
+GET    /api/auth/me             — Current user
+
+GET    /api/workspaces          — List workspaces
+POST   /api/workspaces          — Create workspace
+GET    /api/workspaces/:id      — Get workspace + bases
+DELETE /api/workspaces/:id      — Delete (owner only)
+
+GET    /api/tables/:id          — Table + fields + views
+GET    /api/tables/:id/records  — Paginated records (?page=&limit=)
+POST   /api/tables/:id/records  — Create record
+PATCH  /api/tables/:id/records/:rid  — Update record
+DELETE /api/tables/:id/records/:rid  — Delete record
+POST   /api/tables/:id/records/bulk-delete  — Bulk delete
+
+GET    /api/admin/users         — All users (admin)
+PATCH  /api/admin/users/:id     — Update role/status (admin)
+GET    /api/admin/audit-log     — Audit trail (admin)
+GET    /api/admin/usage         — Free-tier usage dashboard (admin)
+GET    /api/admin/stats         — System statistics (admin)
+```
+
+### Worker Setup
+
+```bash
+cd worker
+
+# Install dependencies
+pnpm install
+
+# Create D1 database
+npx wrangler d1 create dataos-db
+# Copy the database_id into wrangler.toml
+
+# Create KV namespace
+npx wrangler kv namespace create KV
+# Copy the namespace id into wrangler.toml
+
+# Run migrations
+pnpm db:migrate        # local
+pnpm db:migrate:prod   # production
+
+# Seed sample data
+pnpm db:seed           # local
+pnpm db:seed:prod      # production
+
+# Dev server
+pnpm dev
+
+# Deploy
+pnpm deploy
+```
+
+---
+
+## 🚀 Deployment (Zero Cost)
+
+### Frontend → Vercel Hobby (Free)
+
+1. Push to GitHub
+2. Import in [vercel.com/new](https://vercel.com/new) → Select this repo
+3. Framework: **Vite** (auto-detected)
+4. Environment variable: `VITE_API_URL` = your Worker URL (e.g., `https://dataos-api.<account>.workers.dev`)
+5. Deploy — live at `https://dataos.vercel.app`
+
+Or via CLI:
+
+```bash
+npx vercel --prod
+```
+
+### Backend → Cloudflare Workers (Free)
+
+```bash
+cd worker
+npx wrangler d1 create dataos-db
+# Update wrangler.toml with database_id
+npx wrangler kv namespace create KV
+# Update wrangler.toml with kv namespace id
+
+pnpm db:migrate:prod
+pnpm db:seed:prod
+pnpm deploy
+```
+
+The API will be live at `https://dataos-api.<account>.workers.dev`.
+
+### CI/CD (GitHub Actions)
+
+The CI pipeline (`.github/workflows/ci.yml`) automatically:
+- **Lint** + **TypeScript check**
+- **Security audit** dependencies
+- **Run tests** (Vitest)
+- **Build** frontend
+- **Deploy frontend** to Cloudflare Pages (main branch)
+- **Deploy Worker** API to Cloudflare Workers (main branch)
+
+Required GitHub Secrets:
+- `CLOUDFLARE_API_TOKEN` — Cloudflare API token with Workers + Pages permissions
+- `CLOUDFLARE_ACCOUNT_ID` — Your Cloudflare account ID
+- `VERCEL_TOKEN` — (optional) For Vercel CLI deploys
 
 ---
 

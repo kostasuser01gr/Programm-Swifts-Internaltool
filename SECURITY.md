@@ -21,8 +21,24 @@ This repository uses **GitHub Code Scanning** powered by **CodeQL** on every pul
 ### Scope
 
 - **Languages**: JavaScript / TypeScript (primary), Dart (ShiftForge sub-project).
-- **Folders**: All source under `src/` and `shiftforge/lib/`.
+- **Folders**: All source under `src/`, `worker/src/`, and `shiftforge/lib/`.
 - **Queries**: `security-extended` suite (covers OWASP Top 10 and more).
+
+## Backend Security (Cloudflare Workers)
+
+The Worker API in `worker/` implements defense-in-depth:
+
+| Control                | Implementation                                      |
+|------------------------|------------------------------------------------------|
+| Password hashing       | PBKDF2-SHA256, 100K iterations, per-user salt         |
+| Session tokens         | 256-bit random, stored as SHA-256 hash in D1          |
+| Rate limiting          | KV-backed, 60 req/min general, 10 req/min auth        |
+| Fail-closed            | Blocks at 80% of free-tier daily limits (D1, KV, reqs)|
+| Input validation       | Strict schema validation on all inputs                 |
+| CORS                   | Restricted to configured origin                        |
+| Security headers       | X-Content-Type-Options, X-Frame-Options, CSP           |
+| Audit logging          | All mutations logged with user, IP, timestamp          |
+| Timing-safe compare    | Constant-time token & password comparison              |
 
 ## Reporting Vulnerabilities
 
