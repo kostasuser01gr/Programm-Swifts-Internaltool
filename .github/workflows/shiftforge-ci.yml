@@ -42,6 +42,10 @@ jobs:
         working-directory: shiftforge
         run: flutter analyze --no-fatal-infos
 
+      - name: Ensure web platform exists
+        working-directory: shiftforge
+        run: flutter create --platforms=web .
+
       - name: Build web
         working-directory: shiftforge
         run: |
