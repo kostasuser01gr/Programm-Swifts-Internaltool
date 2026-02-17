@@ -1,0 +1,26 @@
+# ─── DataOS / Station Manager — Docker Compose ──────────────
+# Production-ready setup for local deployment and testing.
+#
+# Usage:
+#   docker compose up --build -d        # Build & start
+#   docker compose logs -f              # Stream logs
+#   docker compose down                 # Stop & remove
+#   docker compose up -d --force-recreate  # Rebuild & restart
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dataos-app
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    environment:
+      - NODE_ENV=production

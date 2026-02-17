@@ -1,0 +1,38 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "automations",
+    "canvaskit",
+    "codeql",
+    "figma",
+    "gantt",
+    "notif",
+    "nums",
+    "pnpm",
+    "serialised",
+    "shiftforge",
+    "subosito",
+    "temurin",
+    "unparseable",
+    "vite",
+    "vitest",
+    "tailwindcss",
+    "radix",
+    "sonner",
+    "lucide",
+    "recharts",
+    "pocketbase",
+    "ollama",
+    "healthcheck",
+    "appcat",
+    "autofix"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "pnpm-lock.yaml",
+    "shiftforge/build",
+    ".github/workflows"
+  ]
+}

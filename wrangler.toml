@@ -1,0 +1,10 @@
+name = "station-manager"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+# Build locally with: pnpm build
+# Then deploy with: npx wrangler pages deploy dist
+
+# Environment variables (set in Cloudflare dashboard)
+# [vars]
+# VITE_API_URL = "https://api.example.com"

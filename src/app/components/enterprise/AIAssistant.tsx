@@ -81,63 +81,63 @@ What would you like to do today?`,
   const getAIResponse = (query: string): string => {
     const lowerQuery = query.toLowerCase();
     
-    if (lowerQuery.includes('high priority') || lowerQuery.includes('urgent')) {
-      return `I found 3 high priority tasks:
+    if (lowerQuery.includes('high priority') || lowerQuery.includes('urgent') || lowerQuery.includes('νυχτερινή') || lowerQuery.includes('βάρδια')) {
+      return `Βρήκα 3 νυχτερινές βάρδιες σήμερα:
 
-1. **Implement user authentication** - Due Feb 15, Assigned to John Smith
-2. **Fix mobile responsive issues** - Due Feb 10 (OVERDUE), Assigned to Mike Chen
-3. **Set up CI/CD pipeline** - Due Feb 16, Assigned to Mike Chen
+1. **ΜΟΙΡΑΚΗΣ** - ΟΜΑΔΑ Α, Ν (Νυχτερινή)
+2. **POSKREKOVA** - ΟΜΑΔΑ Β, Ν (Νυχτερινή)
+3. **ΑΝΑΣΤΑΣΑΚΗ ΜΑΡΙΑ** - ΟΜΑΔΑ Β, Ν (Νυχτερινή)
 
-Would you like me to create a filtered view for these tasks or set up notifications?`;
+Θέλετε να δημιουργήσω φιλτραρισμένη προβολή ή ειδοποιήσεις;`;
     }
     
-    if (lowerQuery.includes('formula') || lowerQuery.includes('calculate')) {
-      return `I can help you create a formula! For calculating total effort, use:
+    if (lowerQuery.includes('formula') || lowerQuery.includes('calculate') || lowerQuery.includes('ώρες') || lowerQuery.includes('σύνολο')) {
+      return `Μπορώ να υπολογίσω τις ώρες! Χρησιμοποιήστε:
 
 \`\`\`
-SUM({Effort (hours)})
+SUM({ΩΡΕΣ})
 \`\`\`
 
-For In Progress tasks specifically, create a Rollup field with:
-- Filter: Status = "In Progress"
-- Aggregation: SUM of Effort (hours)
+Για πρωινές βάρδιες ειδικά, δημιουργήστε Rollup πεδίο:
+- Φίλτρο: ΒΑΡΔΙΑ = "Π (Πρωινή)"
+- Συνάθροιση: SUM ΩΡΕΣ
 
-This will give you: **24 hours** of effort currently in progress.
+Αυτό θα δώσει: **80 ώρες** σε πρωινή βάρδια σήμερα.
 
-Would you like me to add this field to your table?`;
+Θέλετε να προσθέσω αυτό το πεδίο;`;
     }
     
-    if (lowerQuery.includes('automation')) {
-      return `I can create an automation for overdue tasks! Here's what it would do:
+    if (lowerQuery.includes('automation') || lowerQuery.includes('αυτοματισμός')) {
+      return `Μπορώ να δημιουργήσω αυτοματισμό για τις βάρδιες! Θα κάνει:
 
-**Trigger:** Daily at 9 AM
-**Condition:** Due Date < Today AND Status ≠ "Done"
-**Actions:**
-1. Send notification to assignee
-2. Update Priority to "Urgent"
-3. Add comment: "This task is overdue"
+**Trigger:** Καθημερινά στις 6:00
+**Συνθήκη:** ΒΑΡΔΙΑ = "Π (Πρωινή)" ΚΑΙ ΠΑΡΩΝ/ΟΥΣΑ = false
+**Ενέργειες:**
+1. Ειδοποίηση στον επόπτη
+2. Ενημέρωση ΚΑΤΑΣΤΑΣΗ σε "Άδεια"
+3. Σχόλιο: "Απουσία - ενημέρωση επόπτη"
 
-Would you like me to set this up?`;
+Θέλετε να το ρυθμίσω;`;
     }
     
-    if (lowerQuery.includes('clean') || lowerQuery.includes('duplicate')) {
-      return `I scanned your data and found:
+    if (lowerQuery.includes('clean') || lowerQuery.includes('duplicate') || lowerQuery.includes('έλεγχος') || lowerQuery.includes('διπλότυπα')) {
+      return `Έλεγξα τα δεδομένα και βρήκα:
 
-✓ No duplicate records
-✓ 2 records with missing assignees
-✓ 1 record with empty description
+✓ 23 εγγραφές προσωπικού
+✓ 8 στην ΟΜΑΔΑ Α, 15 στην ΟΜΑΔΑ Β
+✓ 1 εγγραφή ρεπό (ΝΤΑΓΚΙΝΗΣ)
 
-Would you like me to:
-1. Highlight records needing attention
-2. Auto-assign unassigned tasks
-3. Fill in default descriptions`;
+Θέλετε να:
+1. Επισημάνω τα μέλη σε ρεπό
+2. Ελέγξω ισοκατανομή βαρδιών
+3. Εξάγω αναφορά παρουσιών`;
     }
     
-    return `I understand you're asking about "${query}". Based on your current data in "${tableName}", I can:
+    return `Κατανοώ την ερώτηση: "${query}". Με βάση τα δεδομένα στο "${tableName}", μπορώ να:
 
-1. **Analyze patterns** - I see 8 total tasks with varied priorities
-2. **Suggest optimizations** - 2 tasks are overdue and need attention
-3. **Create views** - Would you like a view for tasks due this week?
+1. **Αναλύσω πρότυπα** - Βλέπω 23 μέλη προσωπικού σε 2 ομάδες
+2. **Προτείνω βελτιστοποιήσεις** - Ισοκατανομή βαρδιών ανά ομάδα
+3. **Δημιουργήσω προβολές** - Θέλετε προβολή ανά τύπο βάρδιας;
 4. **Build automations** - I can automate status updates and notifications
 
 What specific aspect would you like help with?`;
