@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 
 // ─── Connectivity & Session Monitor ─────────────────────────
 // Shows offline banner when network is down.
-// Auto-logs out on session expiry.
+// Auto-logs out on session expiry. 
 
 const cm: Record<string, React.CSSProperties> = {
   offlineBanner: {
