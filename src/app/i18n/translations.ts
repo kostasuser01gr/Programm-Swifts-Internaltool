@@ -1,0 +1,528 @@
+// ─── Translation System ──────────────────────────────────────
+// Lightweight i18n with Greek (default) and English support.
+// Uses dot-notation keys for nested lookups.
+
+export type Locale = 'el' | 'en';
+
+export interface TranslationMap {
+  [key: string]: string | TranslationMap;
+}
+
+const el: TranslationMap = {
+  common: {
+    save: 'Αποθήκευση',
+    cancel: 'Ακύρωση',
+    delete: 'Διαγραφή',
+    edit: 'Επεξεργασία',
+    add: 'Προσθήκη',
+    search: 'Αναζήτηση...',
+    loading: 'Φόρτωση...',
+    confirm: 'Επιβεβαίωση',
+    close: 'Κλείσιμο',
+    back: 'Πίσω',
+    next: 'Επόμενο',
+    yes: 'Ναι',
+    no: 'Όχι',
+    ok: 'OK',
+    error: 'Σφάλμα',
+    success: 'Επιτυχία',
+    warning: 'Προειδοποίηση',
+    info: 'Πληροφορία',
+    noData: 'Δεν υπάρχουν δεδομένα',
+    retry: 'Δοκιμή ξανά',
+    today: 'Σήμερα',
+    all: 'Όλα',
+  },
+
+  nav: {
+    dashboard: 'Πίνακας',
+    chat: 'Chat',
+    fleet: 'Στόλος',
+    washer: 'Πλυντήρια',
+    game: 'Παιχνίδι',
+    settings: 'Ρυθμίσεις',
+  },
+
+  auth: {
+    enterPin: 'Εισάγετε PIN',
+    loginButton: 'Είσοδος',
+    wrongPin: 'Λάθος PIN',
+    verifying: 'Επαλήθευση...',
+    selectProfile: 'Επιλέξτε προφίλ',
+    logout: 'Αποσύνδεση',
+    sessionExpired: 'Η συνεδρία σας έληξε',
+    sessionExpiryWarning: 'Η συνεδρία λήγει σε {minutes} λεπτά',
+  },
+
+  chat: {
+    title: 'Επικοινωνία Σταθμού',
+    newMessage: 'Νέο μήνυμα...',
+    send: 'Αποστολή',
+    channels: 'Κανάλια',
+    members: 'Μέλη',
+    online: 'Online',
+    offline: 'Offline',
+    typing: 'γράφει...',
+    reply: 'Απάντηση',
+    thread: 'Νήμα',
+    mention: 'Αναφορά',
+    noMessages: 'Δεν υπάρχουν μηνύματα',
+    pinMessage: 'Καρφίτσωμα',
+  },
+
+  fleet: {
+    title: 'Διαχείριση Στόλου',
+    vehicles: 'Οχήματα',
+    addVehicle: 'Νέο Όχημα',
+    plate: 'Πινακίδα',
+    model: 'Μοντέλο',
+    status: 'Κατάσταση',
+    location: 'Τοποθεσία',
+    notes: 'Σημειώσεις',
+    photos: 'Φωτογραφίες',
+    damage: 'Ζημιές',
+    timeline: 'Ιστορικό',
+    available: 'Διαθέσιμο',
+    rented: 'Ενοικιασμένο',
+    maintenance: 'Συντήρηση',
+    washing: 'Πλύσιμο',
+    addNote: 'Προσθήκη σημείωσης',
+    addPhoto: 'Προσθήκη φωτογραφίας',
+    reportDamage: 'Αναφορά ζημιάς',
+    noNotes: 'Δεν υπάρχουν σημειώσεις',
+    noPhotos: 'Δεν υπάρχουν φωτογραφίες',
+    noDamage: 'Δεν υπάρχουν αναφορές ζημιών',
+    noTimeline: 'Δεν υπάρχει ιστορικό',
+    category: {
+      general: 'Γενικά',
+      maintenance: 'Συντήρηση',
+      issue: 'Πρόβλημα',
+      handover: 'Παράδοση',
+      inspection: 'Επιθεώρηση',
+    },
+    severity: {
+      minor: 'Μικρή',
+      moderate: 'Μέτρια',
+      major: 'Μεγάλη',
+    },
+  },
+
+  washer: {
+    title: 'Πλυντήρια',
+    queue: 'Ουρά',
+    kanban: 'Kanban',
+    list: 'Λίστα',
+    addToQueue: 'Προσθήκη στην Ουρά',
+    start: 'Ξεκίνα',
+    complete: 'Ολοκλήρωση',
+    inspect: 'Επιθεώρηση',
+    inspection: {
+      title: 'Φόρμα Επιθεώρησης',
+      pass: 'Πέρασε',
+      fail: 'Αποτυχία / Ξαναπλύσιμο',
+      allOk: 'Όλα τα σημεία ελέγχου OK',
+      failedItems: '{count} σημείο(-α) απέτυχε(-αν) — θα ξαναμπεί στην ουρά',
+      damageFound: 'Εντοπίστηκε ζημιά',
+      notes: 'Σημειώσεις επιθεώρησης...',
+      exterior: 'Εξωτερικά',
+      interior: 'Εσωτερικά',
+      final: 'Τελικός Έλεγχος',
+    },
+    status: {
+      waiting: 'Αναμονή',
+      in_progress: 'Σε εξέλιξη',
+      done: 'Ολοκληρώθηκε',
+      inspected: 'Επιθεωρήθηκε',
+    },
+    washType: {
+      quick: 'Γρήγορο',
+      standard: 'Κανονικό',
+      deep: 'Βαθύ',
+      vip: 'VIP',
+    },
+    priority: {
+      normal: 'Κανονική',
+      urgent: 'Επείγον',
+      vip: 'VIP',
+    },
+    plateLabel: 'Πινακίδα',
+    typeLabel: 'Τύπος',
+    priorityLabel: 'Προτεραιότητα',
+    progress: 'Πρόοδος',
+    requested: 'Ζητήθηκε',
+    started: 'Ξεκίνησε',
+    finished: 'Τέλος',
+    emptyQueue: 'Η ουρά είναι κενή',
+    todayCompleted: 'Σήμερα',
+    beforeAfter: 'Πριν / Μετά',
+    before: 'Πριν',
+    after: 'Μετά',
+  },
+
+  game: {
+    title: 'Station Challenge',
+    tabs: {
+      play: 'Παιχνίδι',
+      practice: 'Εξάσκηση',
+      leaderboard: 'Κατάταξη',
+      profile: 'Προφίλ',
+    },
+    modes: {
+      daily_sprint: 'Ημερήσιο Sprint',
+      weekly_tournament: 'Εβδομαδιαίο Τουρνουά',
+      practice: 'Εξάσκηση',
+      duel: 'Μονομαχία',
+      team_battle: 'Team Battle',
+      speed_run: 'Speed Run',
+    },
+    categories: {
+      fleet: 'Στόλος & Οχήματα',
+      reservations: 'Κρατήσεις',
+      cleaning: 'Καθαρισμός',
+      safety: 'Ασφάλεια',
+      station_ops: 'Λειτουργίες Σταθμού',
+      general_knowledge: 'Γενικές Γνώσεις',
+      logic: 'Λογική & Υπολογισμοί',
+    },
+    difficulty: {
+      easy: 'Εύκολο',
+      medium: 'Μέτριο',
+      hard: 'Δύσκολο',
+    },
+    ui: {
+      startGame: 'Ξεκίνα',
+      nextQuestion: 'Επόμενη',
+      skipQuestion: 'Παράλειψη',
+      timeUp: 'Ο χρόνος τελείωσε!',
+      correct: 'Σωστό!',
+      wrong: 'Λάθος!',
+      score: 'Βαθμολογία',
+      accuracy: 'Ακρίβεια',
+      avgTime: 'Μ.Ο. Χρόνος',
+      streak: 'Σερί',
+      level: 'Επίπεδο',
+      xp: 'XP',
+      badges: 'Βραβεία',
+      noBadges: 'Κέρδισε βραβεία παίζοντας!',
+      questionsCount: '{count} ερωτήσεις',
+      todayPlayed: 'Ήδη έπαιξες σήμερα ✓',
+      playAgainTomorrow: 'Ξαναπαίξε αύριο',
+      results: 'Αποτελέσματα',
+      playAgain: 'Ξαναπαίξε',
+      backToMenu: 'Πίσω στο Μενού',
+      leaderboardPeriod: {
+        daily: 'Σήμερα',
+        weekly: 'Εβδομάδα',
+        monthly: 'Μήνας',
+        allTime: 'Συνολικά',
+      },
+    },
+  },
+
+  settings: {
+    title: 'Ρυθμίσεις',
+    profile: 'Προφίλ',
+    appearance: 'Εμφάνιση',
+    language: 'Γλώσσα',
+    theme: 'Θέμα',
+    dark: 'Σκοτεινό',
+    light: 'Φωτεινό',
+    system: 'Σύστημα',
+    notifications: 'Ειδοποιήσεις',
+    changePin: 'Αλλαγή PIN',
+    currentPin: 'Τρέχον PIN',
+    newPin: 'Νέο PIN',
+    confirmPin: 'Επιβεβαίωση PIN',
+    dataManagement: 'Διαχείριση Δεδομένων',
+    clearData: 'Διαγραφή Δεδομένων',
+    exportData: 'Εξαγωγή',
+    importData: 'Εισαγωγή',
+  },
+
+  connectivity: {
+    offline: 'Εκτός σύνδεσης — ελέγξτε το δίκτυο',
+    reconnected: 'Επανασυνδέθηκε! ✓',
+    sessionWarning: 'Η συνεδρία λήγει σε {minutes} λεπτά',
+  },
+
+  errors: {
+    generic: 'Κάτι πήγε στραβά',
+    networkError: 'Σφάλμα δικτύου',
+    tryAgain: 'Δοκιμάστε ξανά',
+    clearAndReload: 'Καθαρισμός & Επαναφόρτωση',
+    reloadApp: 'Επαναφόρτωση',
+  },
+};
+
+const en: TranslationMap = {
+  common: {
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    add: 'Add',
+    search: 'Search...',
+    loading: 'Loading...',
+    confirm: 'Confirm',
+    close: 'Close',
+    back: 'Back',
+    next: 'Next',
+    yes: 'Yes',
+    no: 'No',
+    ok: 'OK',
+    error: 'Error',
+    success: 'Success',
+    warning: 'Warning',
+    info: 'Info',
+    noData: 'No data available',
+    retry: 'Retry',
+    today: 'Today',
+    all: 'All',
+  },
+
+  nav: {
+    dashboard: 'Dashboard',
+    chat: 'Chat',
+    fleet: 'Fleet',
+    washer: 'Wash Bay',
+    game: 'Game',
+    settings: 'Settings',
+  },
+
+  auth: {
+    enterPin: 'Enter PIN',
+    loginButton: 'Login',
+    wrongPin: 'Wrong PIN',
+    verifying: 'Verifying...',
+    selectProfile: 'Select profile',
+    logout: 'Logout',
+    sessionExpired: 'Your session has expired',
+    sessionExpiryWarning: 'Session expires in {minutes} minutes',
+  },
+
+  chat: {
+    title: 'Station Chat',
+    newMessage: 'New message...',
+    send: 'Send',
+    channels: 'Channels',
+    members: 'Members',
+    online: 'Online',
+    offline: 'Offline',
+    typing: 'typing...',
+    reply: 'Reply',
+    thread: 'Thread',
+    mention: 'Mention',
+    noMessages: 'No messages',
+    pinMessage: 'Pin message',
+  },
+
+  fleet: {
+    title: 'Fleet Management',
+    vehicles: 'Vehicles',
+    addVehicle: 'New Vehicle',
+    plate: 'Plate',
+    model: 'Model',
+    status: 'Status',
+    location: 'Location',
+    notes: 'Notes',
+    photos: 'Photos',
+    damage: 'Damage',
+    timeline: 'Timeline',
+    available: 'Available',
+    rented: 'Rented',
+    maintenance: 'Maintenance',
+    washing: 'Washing',
+    addNote: 'Add note',
+    addPhoto: 'Add photo',
+    reportDamage: 'Report damage',
+    noNotes: 'No notes',
+    noPhotos: 'No photos',
+    noDamage: 'No damage reports',
+    noTimeline: 'No timeline data',
+    category: {
+      general: 'General',
+      maintenance: 'Maintenance',
+      issue: 'Issue',
+      handover: 'Handover',
+      inspection: 'Inspection',
+    },
+    severity: {
+      minor: 'Minor',
+      moderate: 'Moderate',
+      major: 'Major',
+    },
+  },
+
+  washer: {
+    title: 'Wash Bay',
+    queue: 'Queue',
+    kanban: 'Kanban',
+    list: 'List',
+    addToQueue: 'Add to Queue',
+    start: 'Start',
+    complete: 'Complete',
+    inspect: 'Inspect',
+    inspection: {
+      title: 'Inspection Form',
+      pass: 'Pass',
+      fail: 'Fail / Re-wash',
+      allOk: 'All checkpoints passed',
+      failedItems: '{count} checkpoint(s) failed — will be re-queued',
+      damageFound: 'Damage found',
+      notes: 'Inspection notes...',
+      exterior: 'Exterior',
+      interior: 'Interior',
+      final: 'Final Check',
+    },
+    status: {
+      waiting: 'Waiting',
+      in_progress: 'In Progress',
+      done: 'Done',
+      inspected: 'Inspected',
+    },
+    washType: {
+      quick: 'Quick',
+      standard: 'Standard',
+      deep: 'Deep',
+      vip: 'VIP',
+    },
+    priority: {
+      normal: 'Normal',
+      urgent: 'Urgent',
+      vip: 'VIP',
+    },
+    plateLabel: 'Plate',
+    typeLabel: 'Type',
+    priorityLabel: 'Priority',
+    progress: 'Progress',
+    requested: 'Requested',
+    started: 'Started',
+    finished: 'Finished',
+    emptyQueue: 'Queue is empty',
+    todayCompleted: 'Today',
+    beforeAfter: 'Before / After',
+    before: 'Before',
+    after: 'After',
+  },
+
+  game: {
+    title: 'Station Challenge',
+    tabs: {
+      play: 'Play',
+      practice: 'Practice',
+      leaderboard: 'Leaderboard',
+      profile: 'Profile',
+    },
+    modes: {
+      daily_sprint: 'Daily Sprint',
+      weekly_tournament: 'Weekly Tournament',
+      practice: 'Practice',
+      duel: 'Duel',
+      team_battle: 'Team Battle',
+      speed_run: 'Speed Run',
+    },
+    categories: {
+      fleet: 'Fleet & Vehicles',
+      reservations: 'Reservations',
+      cleaning: 'Cleaning',
+      safety: 'Safety',
+      station_ops: 'Station Operations',
+      general_knowledge: 'General Knowledge',
+      logic: 'Logic & Calculations',
+    },
+    difficulty: {
+      easy: 'Easy',
+      medium: 'Medium',
+      hard: 'Hard',
+    },
+    ui: {
+      startGame: 'Start',
+      nextQuestion: 'Next',
+      skipQuestion: 'Skip',
+      timeUp: 'Time\'s up!',
+      correct: 'Correct!',
+      wrong: 'Wrong!',
+      score: 'Score',
+      accuracy: 'Accuracy',
+      avgTime: 'Avg Time',
+      streak: 'Streak',
+      level: 'Level',
+      xp: 'XP',
+      badges: 'Badges',
+      noBadges: 'Earn badges by playing!',
+      questionsCount: '{count} questions',
+      todayPlayed: 'Already played today ✓',
+      playAgainTomorrow: 'Play again tomorrow',
+      results: 'Results',
+      playAgain: 'Play Again',
+      backToMenu: 'Back to Menu',
+      leaderboardPeriod: {
+        daily: 'Today',
+        weekly: 'Week',
+        monthly: 'Month',
+        allTime: 'All Time',
+      },
+    },
+  },
+
+  settings: {
+    title: 'Settings',
+    profile: 'Profile',
+    appearance: 'Appearance',
+    language: 'Language',
+    theme: 'Theme',
+    dark: 'Dark',
+    light: 'Light',
+    system: 'System',
+    notifications: 'Notifications',
+    changePin: 'Change PIN',
+    currentPin: 'Current PIN',
+    newPin: 'New PIN',
+    confirmPin: 'Confirm PIN',
+    dataManagement: 'Data Management',
+    clearData: 'Clear Data',
+    exportData: 'Export',
+    importData: 'Import',
+  },
+
+  connectivity: {
+    offline: 'Offline — check your connection',
+    reconnected: 'Reconnected! ✓',
+    sessionWarning: 'Session expires in {minutes} minutes',
+  },
+
+  errors: {
+    generic: 'Something went wrong',
+    networkError: 'Network error',
+    tryAgain: 'Try again',
+    clearAndReload: 'Clear & Reload',
+    reloadApp: 'Reload app',
+  },
+};
+
+export const translations: Record<Locale, TranslationMap> = { el, en };
+
+/**
+ * Resolve a dot-notation key from a translation map.
+ * e.g. resolve('fleet.category.general', el) => 'Γενικά'
+ */
+export function resolve(key: string, map: TranslationMap, params?: Record<string, string | number>): string {
+  const parts = key.split('.');
+  let current: TranslationMap | string = map;
+  for (const part of parts) {
+    if (typeof current === 'string') return key; // key not found
+    current = current[part];
+    if (current === undefined) return key;
+  }
+  if (typeof current !== 'string') return key;
+
+  // Interpolate {param} placeholders
+  if (params) {
+    let result = current;
+    for (const [k, v] of Object.entries(params)) {
+      result = result.replace(`{${k}}`, String(v));
+    }
+    return result;
+  }
+  return current;
+}

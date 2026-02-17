@@ -4,7 +4,7 @@ import { mockWorkspace, mockBase, mockTable, mockFields, mockRecords, mockViews,
 describe('Mock Data Integrity', () => {
   it('workspace has required properties', () => {
     expect(mockWorkspace.id).toBe('ws-1');
-    expect(mockWorkspace.name).toBe('Acme Corporation');
+    expect(mockWorkspace.name).toBe('Πρόγραμμα Βαρδιών');
     expect(mockWorkspace.members).toHaveLength(3);
     expect(mockWorkspace.bases).toHaveLength(1);
   });

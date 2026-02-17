@@ -46,7 +46,7 @@ function KanbanCard({
     type: ITEM_TYPE,
     item: (): DragItem => ({
       recordId: record.id,
-      sourceColumnId: record.fields[groupByFieldId],
+      sourceColumnId: record.fields[groupByFieldId] as string,
     }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -67,7 +67,7 @@ function KanbanCard({
 
       {tagsField && record.fields[tagsField.id] && (
         <div className="flex gap-1 flex-wrap mb-2">
-          {(Array.isArray(record.fields[tagsField.id]) ? record.fields[tagsField.id] : []).map((tagId: string) => {
+          {(Array.isArray(record.fields[tagsField.id]) ? (record.fields[tagsField.id] as string[]) : []).map((tagId: string) => {
             const tag = tagsField.options?.choices?.find((c) => c.id === tagId);
             return tag ? (
               <ColorBadge
@@ -97,7 +97,7 @@ function KanbanCard({
 
         {dateField && record.fields[dateField.id] && (
           <div className="text-xs text-gray-500">
-            {new Date(record.fields[dateField.id]).toLocaleDateString('en-US', {
+            {new Date(String(record.fields[dateField.id])).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
             })}

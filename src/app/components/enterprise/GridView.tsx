@@ -233,7 +233,7 @@ export function GridView({ fields, records, onRecordClick, onCellChange, onAddRe
       case 'date':
         return value ? (
           <div className="px-2 text-sm">
-            {new Date(value).toLocaleDateString('en-US', {
+            {new Date(String(value)).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',

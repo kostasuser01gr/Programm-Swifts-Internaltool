@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import { Calendar, Search as SearchIcon, Undo2, Redo2, Bell, Settings2 } from 'lucide-react';
 import { Sidebar } from './components/enterprise/Sidebar';
 import { ViewToolbar } from './components/enterprise/ViewToolbar';
@@ -30,6 +31,7 @@ import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
 export default function App() {
+  const navigate = useNavigate();
   const [workspace] = useState(mockWorkspace);
   const [currentBase, setCurrentBase] = useState<Base | null>(mockBase);
   const [currentTable, setCurrentTable] = useState<Table | null>(mockTable);
@@ -162,24 +164,28 @@ export default function App() {
   const handleCellChange = (recordId: string, fieldId: string, value: FieldValue) => {
     const oldRecord = tableData.records.find((r) => r.id === recordId);
     const oldValue = oldRecord?.fields[fieldId];
+    const applyChange = (newVal: FieldValue) => {
+      setTableData((prev) => ({
+        ...prev,
+        records: prev.records.map((record) =>
+          record.id === recordId
+            ? {
+                ...record,
+                fields: { ...record.fields, [fieldId]: newVal },
+                modifiedTime: new Date().toISOString(),
+                version: record.version + 1,
+              }
+            : record
+        ),
+      }));
+    };
     pushAction({
-      type: 'cell_change',
-      payload: { recordId, fieldId, oldValue, newValue: value },
+      type: 'cellChange',
       description: `Update field in record`,
+      undo: () => applyChange(oldValue as FieldValue),
+      redo: () => applyChange(value),
     });
-    setTableData((prev) => ({
-      ...prev,
-      records: prev.records.map((record) =>
-        record.id === recordId
-          ? {
-              ...record,
-              fields: { ...record.fields, [fieldId]: value },
-              modifiedTime: new Date().toISOString(),
-              version: record.version + 1,
-            }
-          : record
-      ),
-    }));
+    applyChange(value);
     toast.success('Record updated');
   };
 
@@ -207,9 +213,10 @@ export default function App() {
       else newRecord.fields[field.id] = '';
     });
     pushAction({
-      type: 'add_record',
-      payload: { record: newRecord },
+      type: 'recordCreate',
       description: 'Add new record',
+      undo: () => setTableData((prev) => ({ ...prev, records: prev.records.filter((r) => r.id !== newRecord.id) })),
+      redo: () => setTableData((prev) => ({ ...prev, records: [...prev.records, newRecord] })),
     });
     setTableData((prev) => ({
       ...prev,
@@ -621,7 +628,7 @@ export default function App() {
         onClose={() => setShowSearchCommand(false)}
         actions={searchActions}
         onSearch={performSearch}
-        searchResults={searchResults.map((r) => ({ id: r.record.id, title: r.title, subtitle: `Score: ${r.score}` }))}
+        searchResults={searchResults.map((r) => ({ id: r.record.id, title: r.matches[0]?.snippet || r.record.id, subtitle: `Score: ${r.score}` }))}
         onResultClick={(id) => {
           const rec = tableData.records.find((r) => r.id === id);
           if (rec) setSelectedRecord(rec);
@@ -640,6 +647,41 @@ export default function App() {
       />
 
       <Toaster />
+
+      {/* Floating Chat Button */}
+      <button
+        onClick={() => navigate('/chat')}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          border: 'none',
+          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+          color: '#fff',
+          fontSize: 26,
+          cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          transition: 'transform 0.2s, box-shadow 0.2s',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.boxShadow = '0 6px 28px rgba(99,102,241,0.5)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)';
+        }}
+        title="Station Chat"
+      >
+        💬
+      </button>
     </div>
   );
 }

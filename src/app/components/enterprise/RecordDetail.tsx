@@ -27,7 +27,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
         if (field.name.toLowerCase().includes('description') || field.name.toLowerCase().includes('notes')) {
           return (
             <Textarea
-              value={value || ''}
+              value={(value as any) || ''}
               onChange={(e) => onFieldChange(field.id, e.target.value)}
               placeholder={`Enter ${field.name.toLowerCase()}...`}
               className="min-h-[100px]"
@@ -36,7 +36,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
         }
         return (
           <Input
-            value={value || ''}
+            value={(value as any) || ''}
             onChange={(e) => onFieldChange(field.id, e.target.value)}
             placeholder={`Enter ${field.name.toLowerCase()}...`}
           />
@@ -46,7 +46,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
         return (
           <Input
             type="number"
-            value={value || ''}
+            value={(value as any) || ''}
             onChange={(e) => onFieldChange(field.id, parseFloat(e.target.value))}
             placeholder={`Enter ${field.name.toLowerCase()}...`}
           />
@@ -56,7 +56,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
         return (
           <Input
             type="date"
-            value={value || ''}
+            value={(value as any) || ''}
             onChange={(e) => onFieldChange(field.id, e.target.value)}
           />
         );
@@ -77,7 +77,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
       case 'select':
         return (
           <select
-            value={value || ''}
+            value={(value as any) || ''}
             onChange={(e) => onFieldChange(field.id, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             aria-label={field.name}
@@ -122,7 +122,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
       case 'user':
         return (
           <select
-            value={value || ''}
+            value={(value as any) || ''}
             onChange={(e) => onFieldChange(field.id, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             aria-label={field.name}
@@ -139,7 +139,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
       default:
         return (
           <Input
-            value={value || ''}
+            value={(value as any) || ''}
             onChange={(e) => onFieldChange(field.id, e.target.value)}
             placeholder={`Enter ${field.name.toLowerCase()}...`}
           />
@@ -163,7 +163,7 @@ export function RecordDetail({ record, fields, onClose, onFieldChange, members }
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex-1 min-w-0">
           <Input
-            value={record.fields[primaryField?.id || ''] || 'Untitled'}
+            value={(record.fields[primaryField?.id || ''] as any) || 'Untitled'}
             onChange={(e) => primaryField && onFieldChange(primaryField.id, e.target.value)}
             className="font-semibold text-lg border-none shadow-none px-0 focus-visible:ring-0"
           />

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { JSX } from 'react';
 import { ErrorBoundary } from '../app/components/enterprise/ErrorBoundary';
 
 function BrokenComponent(): JSX.Element {
