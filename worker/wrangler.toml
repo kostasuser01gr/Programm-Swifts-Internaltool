@@ -7,12 +7,13 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "dataos-db"
-database_id = "" # Set after `wrangler d1 create dataos-db`
+database_id = "f9d71785-baac-4490-95d6-52eeb27d77a6"
+migrations_dir = "src/db/migrations"
 
 # ── KV Namespace (Free tier: 100K reads/day, 1K writes/day) ──
 [[kv_namespaces]]
 binding = "KV"
-id = "" # Set after `wrangler kv namespace create DATAOS_KV`
+id = "5f87b7e031ad4b25b0014ecc79b26873"
 
 # ── Environment Variables ──
 [vars]
