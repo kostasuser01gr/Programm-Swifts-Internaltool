@@ -9,6 +9,7 @@ import { I18nProvider } from "./app/i18n/I18nProvider.tsx";
 import { ThemeProvider } from "./app/theme/ThemeProvider.tsx";
 import { Toaster } from "./app/components/ui/sonner.tsx";
 import { CommandPalette } from "./app/components/shell/CommandPalette.tsx";
+import { useAuthBridge } from "./app/hooks/useAuthBridge.ts";
 import "./styles/index.css";
 
 // ── Lazy-loaded pages ─────────────────────────────────────
@@ -21,6 +22,7 @@ const WashPortal = lazy(() => import("./app/components/washer/WashPortal.tsx"));
 const SettingsPanel = lazy(() => import("./app/components/settings/SettingsPanel.tsx"));
 const GamePage = lazy(() => import("./app/components/game/GamePage.tsx"));
 const AdminPage = lazy(() => import("./app/components/shell/AdminPage.tsx"));
+const OnboardingPage = lazy(() => import("./app/components/shared/OnboardingPage.tsx"));
 
 // ── Error pages ───────────────────────────────────────────
 import { NotFoundPage } from "./app/components/shell/ErrorPages.tsx";
@@ -36,12 +38,15 @@ const PageLoading = () => (
 );
 
 // ── Public routes bypass auth ─────────────────────────────
-const PUBLIC_ROUTES = ['/wash'];
+const PUBLIC_ROUTES = ['/wash', '/onboarding'];
 
 function AppRoutes() {
   const location = useLocation();
   const isPublicRoute = PUBLIC_ROUTES.some(r => location.pathname.startsWith(r));
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  // Bridge API auth → platform auth (syncs user profiles)
+  useAuthBridge();
 
   const handleCommandPalette = useCallback(() => {
     setShowCommandPalette(true);
@@ -63,6 +68,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/wash" element={<Suspense fallback={<PageLoading />}><WashPortal /></Suspense>} />
+        <Route path="/onboarding" element={<Suspense fallback={<PageLoading />}><OnboardingPage /></Suspense>} />
       </Routes>
     );
   }

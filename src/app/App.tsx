@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router';
-import { Calendar, Search as SearchIcon, Undo2, Redo2, Bell, Settings2 } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Sidebar } from './components/enterprise/Sidebar';
 import { ViewToolbar } from './components/enterprise/ViewToolbar';
 import { ErrorBoundary } from './components/enterprise/ErrorBoundary';
@@ -8,7 +8,6 @@ import { useEnterpriseData } from './hooks/useEnterpriseData';
 import { Base, Table, View, Record as TableRecord, Filter, Sort, Group, Automation, Notification, FieldValue } from './types';
 import { useUndoRedo } from './hooks/useUndoRedo';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { useSearch } from './hooks/useSearch';
 import { toast } from 'sonner';
 import { SkeletonTable } from './design-system';
 
@@ -25,7 +24,7 @@ const RecordDetail = lazy(() => import('./components/enterprise/RecordDetail').t
 const FilterPanel = lazy(() => import('./components/enterprise/FilterPanel').then(m => ({ default: m.FilterPanel })));
 const SortPanel = lazy(() => import('./components/enterprise/SortPanel').then(m => ({ default: m.SortPanel })));
 const GroupPanel = lazy(() => import('./components/enterprise/GroupPanel').then(m => ({ default: m.GroupPanel })));
-const SearchCommand = lazy(() => import('./components/enterprise/SearchCommand').then(m => ({ default: m.SearchCommand })));
+// SearchCommand removed — global CommandPalette in main.tsx handles ⌘K
 const NotificationCenter = lazy(() => import('./components/enterprise/NotificationCenter').then(m => ({ default: m.NotificationCenter })));
 const BulkActions = lazy(() => import('./components/enterprise/BulkActions').then(m => ({ default: m.BulkActions })));
 const ImportExportPanel = lazy(() => import('./components/enterprise/ImportExportPanel').then(m => ({ default: m.ImportExportPanel })));
@@ -57,7 +56,7 @@ export default function App() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showSortPanel, setShowSortPanel] = useState(false);
   const [showGroupPanel, setShowGroupPanel] = useState(false);
-  const [showSearchCommand, setShowSearchCommand] = useState(false);
+  // SearchCommand state removed — handled by global CommandPalette
   const [showNotifications, setShowNotifications] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const [showAutomations, setShowAutomations] = useState(false);
@@ -73,16 +72,13 @@ export default function App() {
   // Undo/Redo
   const { pushAction, undo, redo, canUndo, canRedo } = useUndoRedo();
 
-  // Search
-  const { results: searchResults, search: performSearch } = useSearch(tableData.records, tableData.fields);
+  // Search — delegated to global CommandPalette
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    'mod+k': () => setShowSearchCommand(true),
     'mod+z': () => { if (canUndo) { undo(); toast.info('Undo'); } },
     'mod+shift+z': () => { if (canRedo) { redo(); toast.info('Redo'); } },
     'escape': () => {
-      setShowSearchCommand(false);
       setSelectedRecords([]);
     },
   });
@@ -352,20 +348,6 @@ export default function App() {
 
   const filteredRecords = getFilteredRecords();
 
-  // Search command actions
-  const searchActions = useMemo(() => [
-    { id: 'search', label: 'Search records...', description: 'Find records across all fields', icon: <SearchIcon className="w-4 h-4" />, category: 'General', shortcut: '⌘K', action: () => {} },
-    { id: 'add-record', label: 'Add new record', description: 'Create a new record in the current table', icon: <SearchIcon className="w-4 h-4" />, category: 'Actions', action: handleAddRecord },
-    { id: 'toggle-ai', label: 'Open AI Assistant', description: 'Get AI-powered help', icon: <SearchIcon className="w-4 h-4" />, category: 'Tools', action: () => setShowAIAssistant(true) },
-    { id: 'show-analytics', label: 'Open Analytics Dashboard', description: 'View charts and stats', icon: <SearchIcon className="w-4 h-4" />, category: 'Tools', action: () => setShowAnalytics(true) },
-    { id: 'show-automations', label: 'Manage Automations', description: 'Create and edit automations', icon: <SearchIcon className="w-4 h-4" />, category: 'Tools', action: () => setShowAutomations(true) },
-    { id: 'import-export', label: 'Import / Export Data', description: 'CSV or JSON format', icon: <SearchIcon className="w-4 h-4" />, category: 'Actions', action: () => setShowImportExport(true) },
-    { id: 'edit-fields', label: 'Edit Fields', description: 'Add, remove, or modify fields', icon: <Settings2 className="w-4 h-4" />, category: 'Settings', action: () => setShowFieldEditor(true) },
-    ...currentTable!.views.map((v) => ({
-      id: `view-${v.id}`, label: `Switch to ${v.name}`, description: `${v.type} view`, icon: <SearchIcon className="w-4 h-4" />, category: 'Views', action: () => handleViewChange(v),
-    })),
-  ], [currentTable, handleAddRecord]);
-
   if (!currentTable) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -406,7 +388,7 @@ export default function App() {
           filterCount={currentView.filters.length}
           sortCount={currentView.sorts.length}
           groupCount={currentView.groups?.length || 0}
-          onSearchClick={() => setShowSearchCommand(true)}
+          onSearchClick={() => {}}
           onUndoClick={canUndo ? () => { undo(); toast.info('Undo'); } : undefined}
           onRedoClick={canRedo ? () => { redo(); toast.info('Redo'); } : undefined}
           canUndo={canUndo}
@@ -599,18 +581,6 @@ export default function App() {
 
       {/* Global overlays */}
       <Suspense fallback={null}>
-      <SearchCommand
-        isOpen={showSearchCommand}
-        onClose={() => setShowSearchCommand(false)}
-        actions={searchActions}
-        onSearch={performSearch}
-        searchResults={searchResults.map((r) => ({ id: r.record.id, title: r.matches[0]?.snippet || r.record.id, subtitle: `Score: ${r.score}` }))}
-        onResultClick={(id) => {
-          const rec = tableData.records.find((r) => r.id === id);
-          if (rec) setSelectedRecord(rec);
-        }}
-      />
-
       <BulkActions
         selectedRecords={selectedRecords}
         records={tableData.records}

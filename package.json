@@ -17,6 +17,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
     "api:dev": "cd worker && pnpm dev",
     "api:deploy": "cd worker && pnpm deploy",
+    "worker:dev": "cd worker && pnpm dev",
+    "worker:deploy": "cd worker && pnpm deploy",
     "db:migrate": "cd worker && pnpm db:migrate",
     "deploy:all": "pnpm build && pnpm api:deploy"
   },

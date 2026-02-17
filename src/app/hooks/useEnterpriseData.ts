@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDataMode } from '../store/dataMode';
-import { workspaceApi, tableApi, type ApiWorkspace, type ApiRecord } from '../api/client';
+import { workspaceApi, tableApi, type ApiWorkspace, type ApiRecord, type ApiBase } from '../api/client';
 import { mockWorkspace, mockBase, mockTable, mockAutomations, mockNotifications } from '../data/mockData';
 import type { Table, Base, Automation, Notification, Record as TableRecord, FieldValue } from '../types';
 import { toast } from 'sonner';
@@ -70,14 +70,55 @@ export function useEnterpriseData(): EnterpriseData {
           if (cancelled) return;
 
           if (wsDetail.ok && wsDetail.data && wsDetail.data.bases && wsDetail.data.bases.length > 0) {
-            // Get first table from first base
-            // This is a simplified mapping — the API types differ from the mock types
-            // We keep the mock structure as the canonical UI type
             const firstBase = wsDetail.data.bases[0];
 
-            // Try to get tables from the base
-            // For now, the API returns tables nested in the workspace/base response
-            // We'll need the table ID to fetch records
+            // The API may or may not nest tables inside the base response.
+            // Cast to access optional nested tables if Worker returns them.
+            const baseTables = (firstBase as ApiBase & { tables?: Array<{ id: string; name: string }> }).tables;
+
+            // Map API base → UI Base shape
+            const uiBase: Base = {
+              ...mockBase,
+              id: firstBase.id,
+              name: firstBase.name,
+              tables: baseTables
+                ? baseTables.map(t => ({
+                    ...mockTable,
+                    id: t.id,
+                    name: t.name,
+                    records: [],
+                    fields: mockTable.fields,
+                    views: mockTable.views,
+                  }))
+                : mockBase.tables,
+            };
+            setCurrentBase(uiBase);
+
+            // If the base has tables, load the first table's records
+            if (baseTables && baseTables.length > 0) {
+              const firstTableId = baseTables[0].id;
+              const recordsRes = await tableApi.getRecords(firstTableId);
+              if (cancelled) return;
+
+              const uiTable: Table = {
+                ...mockTable,
+                id: firstTableId,
+                name: baseTables[0].name,
+                records: recordsRes.ok && recordsRes.data
+                  ? recordsRes.data.map((r: ApiRecord) => ({
+                      id: r.id,
+                      fields: (r.data as Record<string, FieldValue>) || {},
+                      createdTime: r.created_at,
+                      createdBy: r.created_by || '',
+                      modifiedTime: r.updated_at,
+                      modifiedBy: r.created_by || '',
+                      version: 1,
+                    }))
+                  : [],
+              };
+              setCurrentTable(uiTable);
+              setTableData(uiTable);
+            }
           }
         }
       } catch (err) {
