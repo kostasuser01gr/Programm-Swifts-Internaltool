@@ -446,7 +446,7 @@ export function SettingsPanel() {
             {perms?.canResetPin && currentProfile?.id !== user.id && (
               <button
                 className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-white cursor-pointer border-none bg-amber-500"
-                onClick={() => { auth.resetPin(user.id); alert('PIN επαναφέρθηκε σε 1234'); }}
+                onClick={async () => { const tempPin = await auth.resetPin(user.id); alert(`Νέο προσωρινό PIN: ${tempPin}\nΟ χρήστης πρέπει να το αλλάξει.`); }}
               >
                 Reset PIN
               </button>

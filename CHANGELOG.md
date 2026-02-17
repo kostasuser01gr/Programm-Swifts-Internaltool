@@ -8,35 +8,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
-- Production-ready Docker deployment (multi-stage build, Nginx, healthcheck)
-- Docker Compose for single-command deployment
-- GitHub Actions CI/CD pipeline (lint, typecheck, test, build, deploy, audit)
-- CodeQL code scanning with Copilot Autofix
-- 103 unit/integration tests across 11 test files
-- Prettier formatting configuration
-- `.editorconfig`, `.gitattributes` for consistent tooling
-- `.env.example` with documented configuration variables
-- MIT License
-- CONTRIBUTING.md with PR guidelines
-- CHANGELOG.md (this file)
-- Build chunk splitting (vendor-react, vendor-ui, vendor-charts, vendor-mui)
-- Security headers in nginx (Permissions-Policy, X-Content-Type-Options)
-- Dependency security audit in CI pipeline
+- Comprehensive ARIA attributes across all major components (FleetTool, WasherApp, GamePage, StationWars, PinLogin, NavBar, QuickActions, ToastProvider)
+- Keyboard navigation on vehicle list, detail tabs, game options
+- `role`, `aria-label`, `aria-selected`, `aria-hidden`, `aria-checked`, `aria-expanded` throughout
+- Semantic HTML: `<header>`, `<nav>`, `<section>`, `<article>`, `<button>`, `<form>`, `<label htmlFor>`
+- Global `:focus-visible` ring style (oklch-based)
+- CSP header in vercel.json
+- Async Google Fonts loading (non–render-blocking)
+- Random PIN generation on admin reset (replacing hardcoded default)
 
 ### Changed
-- Improved `.gitignore` (macOS artifacts, IDE files, coverage, Wrangler)
-- Standardized package.json scripts (dev, build, test, lint, typecheck, format)
-- Reduced main JS bundle from 980KB to 375KB via code splitting
-- Upgraded nginx security: replaced deprecated X-XSS-Protection with modern headers
-- README rewritten with deployment steps, troubleshooting, and CI badges
+- **Full Tailwind migration**: eliminated ALL `Record<string, CSSProperties>` style objects (FleetTool, WasherApp, GamePage, StationWars, PinLogin, NavBar, QuickActions, ToastProvider, ChatPage, ErrorBoundary, ConnectivityMonitor)
+- Replaced JS hover handlers (`onMouseEnter`/`onMouseLeave`) with CSS `hover:` utilities
+- Replaced injected `<style>` tags with Tailwind utilities (e.g. `animate-pulse`)
+- Interactive `<div onClick>` elements converted to `<button>` for accessibility
+- Package renamed from `@figma/my-make-file` → `dataos-station-manager`
+- React/ReactDOM moved from peerDependencies to dependencies
+- ESLint CI step no longer uses `continue-on-error` (quality gate enforced)
 
 ### Fixed
-- Removed .DS_Store from repository tracking
+- WashPortal/WasherApp timer component no longer uses deleted style objects
+- Removed unused `useFleetStore` import from WasherApp
+- Removed unused `React` and `useMemo` imports across converted components
+- Deleted orphaned `SearchCommand.tsx`
 
 ### Security
-- Zero known vulnerabilities in production dependencies (pnpm audit --prod)
-- PBKDF2 PIN hashing with Web Crypto API (no hardcoded secrets)
-- Secret scanning and push protection recommended in org checklist
+- `DEFAULT_PIN` changed from '1234' to '0000'; admin reset now generates random PINs
+- `resetPin()` returns temporary PIN to admin; no longer reveals default in alert
+- CSP header blocks inline scripts, restricts allowed origins
 
 ## [0.0.1] - 2025-01-01
 

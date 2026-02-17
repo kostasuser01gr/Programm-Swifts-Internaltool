@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, type ReactNode } from 'react';
 
 // ─── Toast Notification System ───────────────────────────────
 // Lightweight, accessible toast notifications. No external deps.
@@ -34,51 +34,13 @@ export function useToast() {
 }
 
 const TOAST_COLORS: Record<ToastType, { bg: string; border: string; icon: string }> = {
-  success: { bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.3)', icon: '✅' },
-  error:   { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)', icon: '❌' },
-  warning: { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', icon: '⚠️' },
-  info:    { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)', icon: 'ℹ️' },
+  success: { bg: 'bg-green-500/[0.12]', border: 'border-green-500/30', icon: '✅' },
+  error:   { bg: 'bg-red-500/[0.12]', border: 'border-red-500/30', icon: '❌' },
+  warning: { bg: 'bg-amber-500/[0.12]', border: 'border-amber-500/30', icon: '⚠️' },
+  info:    { bg: 'bg-blue-500/[0.12]', border: 'border-blue-500/30', icon: 'ℹ️' },
 };
 
-const ts: Record<string, React.CSSProperties> = {
-  container: {
-    position: 'fixed', top: 16, right: 16, left: 16,
-    display: 'flex', flexDirection: 'column', gap: 8,
-    alignItems: 'flex-end', zIndex: 99999,
-    pointerEvents: 'none',
-  },
-  toast: {
-    display: 'flex', alignItems: 'flex-start', gap: 10,
-    padding: '12px 16px', borderRadius: 14, maxWidth: 400, width: '100%',
-    backdropFilter: 'blur(20px)', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-    boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
-    pointerEvents: 'auto', cursor: 'pointer',
-    transition: 'all 0.3s ease',
-  },
-  icon: {
-    fontSize: 18, flexShrink: 0, marginTop: 1,
-  },
-  content: {
-    flex: 1, minWidth: 0,
-  },
-  title: {
-    fontSize: 14, fontWeight: 600, color: '#f1f5f9',
-  },
-  message: {
-    fontSize: 12, color: '#94a3b8', marginTop: 2, lineHeight: 1.4,
-  },
-  close: {
-    background: 'none', border: 'none', color: '#64748b',
-    cursor: 'pointer', fontSize: 14, padding: '2px 4px',
-    flexShrink: 0,
-  },
-  action: {
-    marginTop: 6, padding: '4px 10px', borderRadius: 6,
-    background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)',
-    color: '#60a5fa', fontSize: 12, fontWeight: 600,
-    cursor: 'pointer',
-  },
-};
+// Tailwind classes used directly in JSX
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
   const colors = TOAST_COLORS[toast.type];
@@ -91,22 +53,18 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 
   return (
     <div
-      style={{
-        ...ts.toast,
-        background: colors.bg,
-        border: `1px solid ${colors.border}`,
-      }}
+      className={`flex items-start gap-2.5 py-3 px-4 rounded-[14px] max-w-[400px] w-full backdrop-blur-[20px] font-sans shadow-[0_8px_30px_rgba(0,0,0,0.3)] pointer-events-auto cursor-pointer transition-all duration-300 ease-in-out border ${colors.bg} ${colors.border}`}
       role="alert"
       aria-live="polite"
       onClick={() => onRemove(toast.id)}
     >
-      <span style={ts.icon}>{colors.icon}</span>
-      <div style={ts.content}>
-        <div style={ts.title}>{toast.title}</div>
-        {toast.message && <div style={ts.message}>{toast.message}</div>}
+      <span className="text-lg shrink-0 mt-px" aria-hidden="true">{colors.icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-slate-100">{toast.title}</div>
+        {toast.message && <div className="text-xs text-slate-400 mt-0.5 leading-[1.4]">{toast.message}</div>}
         {toast.action && (
           <button
-            style={ts.action}
+            className="mt-1.5 py-1 px-2.5 rounded-md bg-blue-500/[0.15] border border-blue-500/30 text-blue-400 text-xs font-semibold cursor-pointer"
             onClick={e => {
               e.stopPropagation();
               toast.action!.onClick();
@@ -118,7 +76,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
         )}
       </div>
       <button
-        style={ts.close}
+        className="bg-transparent border-none text-slate-500 cursor-pointer text-sm py-0.5 px-1 shrink-0"
         onClick={e => { e.stopPropagation(); onRemove(toast.id); }}
         aria-label="Κλείσιμο"
       >
@@ -128,7 +86,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   );
 }
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const removeToast = useCallback((id: string) => {
@@ -153,7 +111,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast, success, error, warning, info }}>
       {children}
-      <div style={ts.container} aria-label="Ειδοποιήσεις">
+      <div className="fixed top-4 right-4 left-4 flex flex-col gap-2 items-end z-[99999] pointer-events-none" role="region" aria-label="Ειδοποιήσεις">
         {toasts.map(toast => (
           <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}

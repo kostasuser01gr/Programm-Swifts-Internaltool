@@ -1,4 +1,4 @@
-import React from 'react';
+import type { KeyboardEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuthStore } from '../../store/authStore';
 import { useChatStore } from '../../store/chatStore';
@@ -15,40 +15,7 @@ const NAV_ITEMS = [
   { id: 'settings', path: '/settings',  label: 'Ρυθμίσεις',   icon: '⚙️', requiredPerm: null },
 ];
 
-const nv: Record<string, React.CSSProperties> = {
-  bar: {
-    position: 'fixed', bottom: 0, left: 0, right: 0,
-    display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-    background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(10px)',
-    borderTop: '1px solid rgba(148,163,184,0.08)',
-    padding: '8px 0 max(8px, env(safe-area-inset-bottom))',
-    zIndex: 8000,
-  },
-  item: {
-    display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
-    gap: 2, padding: '6px 16px', borderRadius: 12,
-    border: 'none', background: 'none', cursor: 'pointer',
-    color: '#64748b', fontSize: 10, fontWeight: 500,
-    transition: 'all 0.2s', minWidth: 56,
-    outline: 'none',
-  },
-  itemActive: {
-    color: '#60a5fa', background: 'rgba(59,130,246,0.08)',
-  },
-  itemFocus: {
-    boxShadow: '0 0 0 2px rgba(59,130,246,0.5)',
-  },
-  icon: {
-    fontSize: 22,
-  },
-  logout: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '6px 12px', borderRadius: 8,
-    border: '1px solid rgba(239,68,68,0.15)',
-    background: 'rgba(239,68,68,0.05)', color: '#ef4444',
-    cursor: 'pointer', fontSize: 11, outline: 'none',
-  },
-};
+// Tailwind classes used directly in JSX
 
 export function NavBar() {
   const navigate = useNavigate();
@@ -64,7 +31,7 @@ export function NavBar() {
   };
 
   // Keyboard nav: arrow keys between tabs
-  const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>, idx: number) => {
     const items = NAV_ITEMS;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -80,7 +47,12 @@ export function NavBar() {
   };
 
   return (
-    <nav style={nv.bar} role="navigation" aria-label="Κύρια πλοήγηση">
+    <nav
+      className="fixed bottom-0 left-0 right-0 flex justify-around items-center bg-slate-900/95 backdrop-blur-[10px] border-t border-slate-400/[0.08] pt-2 px-0 z-[8000]"
+      style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
+      role="navigation"
+      aria-label="Κύρια πλοήγηση"
+    >
       {NAV_ITEMS.map((item, idx) => {
         const isActive = location.pathname === item.path ||
           (item.path !== '/' && location.pathname.startsWith(item.path));
@@ -88,28 +60,23 @@ export function NavBar() {
           <button
             key={item.id}
             data-nav-idx={idx}
-            style={{ ...nv.item, ...(isActive ? nv.itemActive : {}) }}
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl border-none bg-transparent cursor-pointer text-[10px] font-medium transition-all duration-200 min-w-14 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+              isActive ? 'text-blue-400 bg-blue-500/[0.08]' : 'text-slate-500'
+            }`}
             onClick={() => navigate(item.path)}
             onKeyDown={e => handleKeyDown(e, idx)}
-            onFocus={e => Object.assign(e.currentTarget.style, { boxShadow: '0 0 0 2px rgba(59,130,246,0.5)' })}
-            onBlur={e => Object.assign(e.currentTarget.style, { boxShadow: 'none' })}
             role="tab"
             aria-selected={isActive}
             aria-label={item.label}
             tabIndex={isActive ? 0 : -1}
           >
-            <span style={{ ...nv.icon, position: 'relative' }} aria-hidden="true">
+            <span className="text-[22px] relative" aria-hidden="true">
               {item.icon}
               {item.id === 'chat' && unreadTotal > 0 && !location.pathname.startsWith('/chat') && (
-                <span style={{
-                  position: 'absolute', top: -4, right: -8,
-                  minWidth: 16, height: 16, borderRadius: 8,
-                  background: '#ef4444', color: '#fff',
-                  fontSize: 9, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 4px', lineHeight: 1,
-                  boxShadow: '0 0 0 2px rgba(15,23,42,0.95)',
-                }} aria-label={`${unreadTotal} μη αναγνωσμένα`}>
+                <span
+                  className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 leading-none shadow-[0_0_0_2px_rgba(15,23,42,0.95)]"
+                  aria-label={`${unreadTotal} μη αναγνωσμένα`}
+                >
                   {unreadTotal > 99 ? '99+' : unreadTotal}
                 </span>
               )}
@@ -119,7 +86,7 @@ export function NavBar() {
         );
       })}
       <button
-        style={nv.logout}
+        className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-red-500/[0.15] bg-red-500/[0.05] text-red-500 cursor-pointer text-[11px] outline-none"
         onClick={handleLogout}
         aria-label="Αποσύνδεση"
         title="Αποσύνδεση"

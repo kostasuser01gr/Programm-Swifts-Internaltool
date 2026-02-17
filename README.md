@@ -462,6 +462,34 @@ See `org/_org_checklist.md` for the full org-level onboarding checklist.
 
 ---
 
+## ♿ Accessibility
+
+All interactive components follow WAI-ARIA best practices:
+
+| Pattern | Where used |
+|---------|-----------|
+| `role="tablist"` / `role="tab"` / `aria-selected` | GamePage tabs, PinLogin mode selector, WasherApp view toggle |
+| `role="listbox"` / `role="option"` | Quiz answers, practice categories, station selector |
+| `role="checkbox"` / `aria-checked` | Damage toggles, inspection checklists |
+| `role="progressbar"` / `aria-valuenow` | XP bars, game timers, station wars progress |
+| `role="status"` / `role="alert"` | Toast notifications, login feedback |
+| `aria-expanded` | Expandable wash cards, inspector panels |
+| `aria-hidden="true"` | Decorative emoji / icons |
+| Semantic HTML | `<header>`, `<nav>`, `<section>`, `<article>`, `<form>`, `<label>`, `<fieldset>`, `<legend>` |
+| Focus management | Global `:focus-visible` ring (oklch), `focus-visible:ring-2` on all interactive elements |
+| Keyboard navigation | All clickable elements are `<button>` or `<a>`, never bare `<div onClick>` |
+
+### Testing Accessibility
+
+```bash
+# Run axe-core via browser devtools (free)
+# 1. Install "axe DevTools" browser extension
+# 2. Open DevTools → axe → Scan page
+# 3. Fix any remaining issues reported
+```
+
+---
+
 ## 🤝 Contributing
 
 This is an enterprise demonstration project showcasing modern architecture patterns. For production use, consider:
@@ -610,6 +638,7 @@ Required GitHub Secrets:
   - Performance strategies
   - Security considerations
 - **[SECURITY.md](./SECURITY.md)** - Code scanning policy & vulnerability reporting
+- **[CHANGELOG.md](./CHANGELOG.md)** - Release history & migration notes
 - **[org/](./org/)** - Org-wide templates (reusable workflows, checklists)
 
 ---

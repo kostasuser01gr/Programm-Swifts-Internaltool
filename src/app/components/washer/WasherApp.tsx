@@ -1,6 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useWasherStore } from '../../store/washerStore';
-import { useFleetStore } from '../../store/fleetStore';
 import { useAuthStore } from '../../store/authStore';
 import type { WashStatus, WashType, WashRecord } from '../../types/platform';
 
@@ -17,188 +16,40 @@ const INSPECTION_ITEMS = [
 ] as const;
 
 // ─── Washer App (stand-alone route at /washer) ───────────────
-// Kanban-style wash queue with drag-like interactions.
-// Pure inline styles for mobile-first glass UI.
+// Kanban-style wash queue. Tailwind theme-aware.
 
 const STATUS_CONFIG: Record<WashStatus, { label: string; color: string; icon: string }> = {
-  waiting:     { label: 'Αναμονή',      color: '#f59e0b', icon: '⏳' },
-  in_progress: { label: 'Σε εξέλιξη',   color: '#3b82f6', icon: '🔄' },
-  done:        { label: 'Ολοκληρώθηκε', color: '#22c55e', icon: '✅' },
-  inspected:   { label: 'Επιθεωρήθηκε', color: '#a855f7', icon: '🔍' },
+  waiting:     { label: 'Αναμονή',      color: 'text-amber-500', icon: '⏳' },
+  in_progress: { label: 'Σε εξέλιξη',   color: 'text-blue-500', icon: '🔄' },
+  done:        { label: 'Ολοκληρώθηκε', color: 'text-green-500', icon: '✅' },
+  inspected:   { label: 'Επιθεωρήθηκε', color: 'text-violet-500', icon: '🔍' },
+};
+
+const STATUS_RAW_COLORS: Record<WashStatus, { headerBg: string; countBg: string }> = {
+  waiting:     { headerBg: 'bg-amber-500/5',  countBg: 'bg-amber-500/15' },
+  in_progress: { headerBg: 'bg-blue-500/5',   countBg: 'bg-blue-500/15' },
+  done:        { headerBg: 'bg-green-500/5',   countBg: 'bg-green-500/15' },
+  inspected:   { headerBg: 'bg-violet-500/5',  countBg: 'bg-violet-500/15' },
 };
 
 const WASH_TYPE_CONFIG: Record<WashType, { label: string; color: string; icon: string; minutes: number }> = {
-  quick:    { label: 'Γρήγορο',  color: '#22c55e', icon: '⚡', minutes: 15 },
-  standard: { label: 'Κανονικό', color: '#3b82f6', icon: '🚿', minutes: 30 },
-  deep:     { label: 'Βαθύ',     color: '#f59e0b', icon: '✨', minutes: 60 },
-  vip:      { label: 'VIP',      color: '#a855f7', icon: '👑', minutes: 90 },
+  quick:    { label: 'Γρήγορο',  color: 'text-green-500', icon: '⚡', minutes: 15 },
+  standard: { label: 'Κανονικό', color: 'text-blue-500', icon: '🚿', minutes: 30 },
+  deep:     { label: 'Βαθύ',     color: 'text-amber-500', icon: '✨', minutes: 60 },
+  vip:      { label: 'VIP',      color: 'text-violet-500', icon: '👑', minutes: 90 },
 };
 
-const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
-  normal: { label: 'Κανονική', color: '#94a3b8' },
-  urgent: { label: 'Επείγον', color: '#ef4444' },
-  vip:    { label: 'VIP', color: '#a855f7' },
+const WASH_TYPE_BG: Record<WashType, string> = {
+  quick: 'bg-green-500/10', standard: 'bg-blue-500/10', deep: 'bg-amber-500/10', vip: 'bg-violet-500/10',
 };
 
-const st: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-    color: '#e2e8f0', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    display: 'flex', flexDirection: 'column',
-  },
-  topBar: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '16px 20px', borderBottom: '1px solid rgba(148,163,184,0.08)',
-    backdropFilter: 'blur(10px)', background: 'rgba(15,23,42,0.7)',
-    position: 'sticky' as const, top: 0, zIndex: 100,
-  },
-  topTitle: {
-    fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8,
-  },
-  statsBar: {
-    display: 'flex', gap: 10, padding: '12px 20px', overflowX: 'auto' as const,
-    borderBottom: '1px solid rgba(148,163,184,0.06)',
-  },
-  statCard: {
-    padding: '10px 16px', borderRadius: 14,
-    border: '1px solid rgba(148,163,184,0.08)',
-    background: 'rgba(30,41,59,0.4)', minWidth: 100,
-    textAlign: 'center' as const, flexShrink: 0,
-  },
-  statNumber: {
-    fontSize: 28, fontWeight: 700,
-  },
-  statLabel: {
-    fontSize: 11, color: '#94a3b8', marginTop: 2,
-  },
-  viewToggle: {
-    display: 'flex', gap: 4, background: 'rgba(30,41,59,0.5)',
-    padding: 3, borderRadius: 10, marginRight: 0,
-  },
-  viewBtn: {
-    padding: '6px 14px', borderRadius: 8, border: 'none',
-    background: 'transparent', color: '#94a3b8', cursor: 'pointer',
-    fontSize: 13, fontWeight: 500, transition: 'all 0.2s',
-  },
-  viewBtnActive: {
-    background: '#3b82f6', color: '#fff',
-  },
-  kanbanContainer: {
-    display: 'flex', gap: 16, padding: 20, flex: 1,
-    overflowX: 'auto' as const,
-  },
-  kanbanColumn: {
-    flex: 1, minWidth: 280, borderRadius: 16,
-    background: 'rgba(30,41,59,0.3)',
-    border: '1px solid rgba(148,163,184,0.06)',
-    display: 'flex', flexDirection: 'column' as const,
-    maxHeight: 'calc(100vh - 200px)',
-  },
-  columnHeader: {
-    padding: '14px 16px', borderBottom: '1px solid rgba(148,163,184,0.06)',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    borderRadius: '16px 16px 0 0',
-  },
-  columnTitle: {
-    fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6,
-  },
-  columnCount: {
-    padding: '2px 8px', borderRadius: 10, fontSize: 12, fontWeight: 600,
-  },
-  columnBody: {
-    flex: 1, overflowY: 'auto' as const, padding: 8,
-  },
-  washCard: {
-    padding: 14, borderRadius: 14, marginBottom: 8,
-    border: '1px solid rgba(148,163,184,0.08)',
-    background: 'rgba(15,23,42,0.4)', cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  washCardUrgent: {
-    borderLeft: '3px solid #ef4444',
-  },
-  washCardVip: {
-    borderLeft: '3px solid #a855f7',
-  },
-  plateBig: {
-    fontSize: 18, fontWeight: 800, letterSpacing: 1.5,
-  },
-  washMeta: {
-    fontSize: 12, color: '#94a3b8', marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' as const,
-  },
-  badge: {
-    padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-    display: 'inline-flex', alignItems: 'center', gap: 3,
-  },
-  checklist: {
-    marginTop: 10, display: 'flex', flexDirection: 'column' as const, gap: 4,
-  },
-  checkItem: {
-    display: 'flex', alignItems: 'center', gap: 8,
-    fontSize: 13, padding: '4px 0', cursor: 'pointer',
-  },
-  checkbox: {
-    width: 18, height: 18, borderRadius: 5,
-    border: '2px solid rgba(148,163,184,0.2)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 11, flexShrink: 0, cursor: 'pointer',
-    transition: 'all 0.15s',
-  },
-  checkboxChecked: {
-    background: '#22c55e', borderColor: '#22c55e', color: '#fff',
-  },
-  actions: {
-    display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' as const,
-  },
-  actionBtn: {
-    padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(148,163,184,0.12)',
-    background: 'rgba(51,65,85,0.4)', color: '#e2e8f0', cursor: 'pointer',
-    fontSize: 12, fontWeight: 500, transition: 'all 0.15s',
-  },
-  actionBtnPrimary: {
-    background: '#3b82f6', borderColor: '#3b82f6', color: '#fff',
-  },
-  addForm: {
-    padding: 20, borderRadius: 16,
-    border: '1px solid rgba(148,163,184,0.1)',
-    background: 'rgba(30,41,59,0.5)', margin: '0 20px 20px',
-  },
-  input: {
-    padding: '10px 14px', borderRadius: 10,
-    border: '1px solid rgba(148,163,184,0.12)',
-    background: 'rgba(15,23,42,0.5)', color: '#e2e8f0',
-    fontSize: 14, outline: 'none', boxSizing: 'border-box' as const,
-  },
-  select: {
-    padding: '10px 14px', borderRadius: 10,
-    border: '1px solid rgba(148,163,184,0.12)',
-    background: 'rgba(15,23,42,0.5)', color: '#e2e8f0',
-    fontSize: 13, outline: 'none',
-  },
-  btnPrimary: {
-    padding: '10px 24px', borderRadius: 12, border: 'none',
-    background: '#3b82f6', color: '#fff', fontSize: 14,
-    fontWeight: 600, cursor: 'pointer',
-  },
-  listRow: {
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: '12px 16px', borderRadius: 12,
-    border: '1px solid rgba(148,163,184,0.06)',
-    background: 'rgba(30,41,59,0.3)', marginBottom: 6,
-    cursor: 'pointer', transition: 'all 0.2s',
-  },
-  timer: {
-    fontSize: 12, color: '#f59e0b', fontWeight: 600,
-    display: 'flex', alignItems: 'center', gap: 4,
-  },
-  homeBtn: {
-    padding: '8px 14px', borderRadius: 10,
-    border: '1px solid rgba(148,163,184,0.12)',
-    background: 'rgba(30,41,59,0.6)', color: '#94a3b8',
-    cursor: 'pointer', fontSize: 13,
-  },
+const PRIORITY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  normal: { label: 'Κανονική', color: 'text-slate-400', bg: 'bg-slate-400/10' },
+  urgent: { label: 'Επείγον', color: 'text-red-500', bg: 'bg-red-500/10' },
+  vip:    { label: 'VIP', color: 'text-violet-500', bg: 'bg-violet-500/10' },
 };
+
+// Tailwind classes used directly in JSX — no inline style objects needed
 
 function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; expanded: boolean; onToggle: () => void }) {
   const washer = useWasherStore();
@@ -251,56 +102,49 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
   };
 
   return (
-    <div
-      style={{
-        ...st.washCard,
-        ...(record.priority === 'urgent' ? st.washCardUrgent : {}),
-        ...(record.priority === 'vip' ? st.washCardVip : {}),
-      }}
+    <article
+      className={`p-3.5 rounded-[14px] mb-2 border border-slate-500/8 bg-slate-900/40 cursor-pointer transition-all duration-200 hover:bg-slate-800/50 ${record.priority === 'urgent' ? 'border-l-3 border-l-red-500' : record.priority === 'vip' ? 'border-l-3 border-l-violet-500' : ''}`}
       onClick={onToggle}
+      role="listitem"
+      aria-expanded={expanded}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="flex justify-between items-start">
         <div>
-          <div style={st.plateBig}>{record.plate}</div>
-          <div style={st.washMeta}>
-            <span style={{ ...st.badge, background: `${wtc.color}15`, color: wtc.color }}>
+          <div className="text-lg font-extrabold tracking-wider">{record.plate}</div>
+          <div className="text-xs text-slate-400 mt-1 flex gap-2 flex-wrap">
+            <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 ${WASH_TYPE_BG[record.washType]} ${WASH_TYPE_CONFIG[record.washType].color}`}>
               {wtc.icon} {wtc.label}
             </span>
             {record.priority !== 'normal' && (
-              <span style={{ ...st.badge, background: `${prc.color}15`, color: prc.color }}>
-                {prc.label}
+              <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold inline-flex items-center gap-1 ${PRIORITY_CONFIG[record.priority].bg} ${PRIORITY_CONFIG[record.priority].color}`}>
+                {PRIORITY_CONFIG[record.priority].label}
               </span>
             )}
             <span>{record.category}</span>
             {record.assignedTo && record.status === 'waiting' && (
-              <span style={{ ...st.badge, background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-400">
                 🙋 Ανατέθηκε
               </span>
             )}
           </div>
         </div>
         {record.status === 'in_progress' && (
-          <div style={{ ...st.timer, color: overdue ? '#ef4444' : '#f59e0b' }}>
+          <div className={`text-xs font-semibold flex items-center gap-1 ${overdue ? 'text-red-500' : 'text-amber-500'}`}>
             ⏱ {String(elapsedMin).padStart(2, '0')}:{String(elapsedSec).padStart(2, '0')}
-            <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.7 }}>/ {estimatedMin}'</span>
-            {overdue && <span style={{ marginLeft: 4, fontSize: 10 }}>⚠️</span>}
+            <span className="text-[10px] ml-1 opacity-70">/ {estimatedMin}'</span>
+            {overdue && <span className="ml-1 text-[10px]">⚠️</span>}
           </div>
         )}
       </div>
 
       {record.status === 'in_progress' && checkTotal > 0 && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>
+        <div className="mt-2">
+          <div className="flex justify-between text-[11px] text-slate-400 mb-1">
             <span>Πρόοδος</span>
             <span>{checkDone}/{checkTotal}</span>
           </div>
-          <div style={{ height: 4, borderRadius: 2, background: 'rgba(148,163,184,0.1)' }}>
-            <div style={{
-              height: '100%', borderRadius: 2,
-              background: checkDone === checkTotal ? '#22c55e' : '#3b82f6',
-              width: `${(checkDone / checkTotal) * 100}%`,
-              transition: 'width 0.3s',
-            }} />
+          <div className="h-1 rounded-sm bg-slate-500/10">
+            <div className={`h-full rounded-sm transition-all duration-300 ${checkDone === checkTotal ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${(checkDone / checkTotal) * 100}%` }} />
           </div>
         </div>
       )}
@@ -308,17 +152,19 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
       {expanded && (
         <>
           {record.status === 'in_progress' && (
-            <div style={st.checklist}>
+            <div className="mt-2.5 flex flex-col gap-1">
               {record.checklist.map(item => (
                 <div
                   key={item.id}
-                  style={st.checkItem}
+                  className="flex items-center gap-2 text-[13px] py-1 cursor-pointer"
                   onClick={e => { e.stopPropagation(); washer.toggleChecklistItem(record.id, item.id); }}
+                  role="checkbox"
+                  aria-checked={item.checked}
                 >
-                  <div style={{ ...st.checkbox, ...(item.checked ? st.checkboxChecked : {}) }}>
+                  <span className={`w-[18px] h-[18px] rounded-[5px] border-2 flex items-center justify-center text-[11px] shrink-0 transition-all duration-150 ${item.checked ? 'bg-green-500 border-green-500 text-white' : 'border-slate-500/20'}`}>
                     {item.checked ? '✓' : ''}
-                  </div>
-                  <span style={{ textDecoration: item.checked ? 'line-through' : 'none', color: item.checked ? '#64748b' : '#e2e8f0' }}>
+                  </span>
+                  <span className={item.checked ? 'line-through text-slate-500' : 'text-slate-200'}>
                     {item.label}
                   </span>
                 </div>
@@ -328,64 +174,50 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
 
           {/* Before / After Photo Comparison */}
           {(record.beforePhotos.length > 0 || record.afterPhotos.length > 0) && (
-            <div style={{ marginTop: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>📸 Πριν / Μετά</div>
-              <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
+            <div className="mt-2.5">
+              <div className="text-xs font-semibold text-slate-400 mb-1.5">📸 Πριν / Μετά</div>
+              <div className="flex gap-2 overflow-x-auto">
                 {record.beforePhotos.map((p, i) => (
-                  <div key={`b-${i}`} style={{ position: 'relative', flexShrink: 0 }}>
-                    <img src={p} alt={`Πριν ${i + 1}`} style={{
-                      width: 80, height: 60, objectFit: 'cover', borderRadius: 8,
-                      border: '2px solid rgba(245,158,11,0.4)',
-                    }} />
-                    <div style={{
-                      position: 'absolute', bottom: 2, left: 2, fontSize: 9,
-                      background: 'rgba(245,158,11,0.8)', color: '#fff',
-                      padding: '1px 4px', borderRadius: 4,
-                    }}>Πριν</div>
+                  <div key={`b-${i}`} className="relative shrink-0">
+                    <img src={p} alt={`Πριν ${i + 1}`} className="w-20 h-[60px] object-cover rounded-lg border-2 border-amber-500/40" />
+                    <div className="absolute bottom-0.5 left-0.5 text-[9px] bg-amber-500/80 text-white px-1 rounded">Πριν</div>
                   </div>
                 ))}
                 {record.afterPhotos.map((p, i) => (
-                  <div key={`a-${i}`} style={{ position: 'relative', flexShrink: 0 }}>
-                    <img src={p} alt={`Μετά ${i + 1}`} style={{
-                      width: 80, height: 60, objectFit: 'cover', borderRadius: 8,
-                      border: '2px solid rgba(34,197,94,0.4)',
-                    }} />
-                    <div style={{
-                      position: 'absolute', bottom: 2, left: 2, fontSize: 9,
-                      background: 'rgba(34,197,94,0.8)', color: '#fff',
-                      padding: '1px 4px', borderRadius: 4,
-                    }}>Μετά</div>
+                  <div key={`a-${i}`} className="relative shrink-0">
+                    <img src={p} alt={`Μετά ${i + 1}`} className="w-20 h-[60px] object-cover rounded-lg border-2 border-green-500/40" />
+                    <div className="absolute bottom-0.5 left-0.5 text-[9px] bg-green-500/80 text-white px-1 rounded">Μετά</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div style={st.actions}>
+          <div className="flex gap-1.5 mt-2.5 flex-wrap">
             {record.status === 'waiting' && currentProfile && (
               <>
                 <button
-                  style={{ ...st.actionBtn, ...st.actionBtnPrimary }}
+                  className="px-3 py-1.5 rounded-lg border border-blue-500 bg-blue-500 text-white cursor-pointer text-xs font-medium transition-all hover:bg-blue-600"
                   onClick={e => { e.stopPropagation(); washer.startWash(record.id, currentProfile.id); }}
                 >
                   ▶ Ξεκίνα
                 </button>
                 {!record.assignedTo && (
                   <button
-                    style={{ ...st.actionBtn, background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.3)', color: '#60a5fa' }}
+                    className="px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/8 text-blue-400 cursor-pointer text-xs font-medium transition-all hover:bg-blue-500/15"
                     onClick={e => { e.stopPropagation(); washer.reassignWasher(record.id, currentProfile.id); }}
                   >
                     🙋 Ανάθεση σε εμένα
                   </button>
                 )}
                 {record.assignedTo === currentProfile.id && (
-                  <span style={{ fontSize: 11, color: '#60a5fa', alignSelf: 'center' }}>✓ Ανατέθηκε σε εσένα</span>
+                  <span className="text-[11px] text-blue-400 self-center">✓ Ανατέθηκε σε εσένα</span>
                 )}
               </>
             )}
             {record.status === 'in_progress' && (
               <button
-                style={{ ...st.actionBtn, ...st.actionBtnPrimary, background: '#22c55e', borderColor: '#22c55e' }}
+                className="px-3 py-1.5 rounded-lg border border-green-500 bg-green-500 text-white cursor-pointer text-xs font-medium transition-all hover:bg-green-600"
                 onClick={e => { e.stopPropagation(); washer.completeWash(record.id); }}
               >
                 ✅ Ολοκλήρωση
@@ -393,15 +225,16 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
             )}
             {record.status === 'done' && currentProfile && !showInspection && (
               <button
-                style={{ ...st.actionBtn, ...st.actionBtnPrimary, background: '#a855f7', borderColor: '#a855f7' }}
+                className="px-3 py-1.5 rounded-lg border border-violet-500 bg-violet-500 text-white cursor-pointer text-xs font-medium transition-all hover:bg-violet-600"
                 onClick={e => { e.stopPropagation(); setShowInspection(true); }}
               >
                 🔍 Επιθεώρηση
               </button>
             )}
             <button
-              style={{ ...st.actionBtn, color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}
+              className="px-3 py-1.5 rounded-lg border border-red-500/20 text-red-500 cursor-pointer text-xs font-medium transition-all hover:bg-red-500/10"
               onClick={e => { e.stopPropagation(); washer.removeFromQueue(record.id); }}
+              aria-label="Διαγραφή"
             >
               🗑
             </button>
@@ -409,12 +242,13 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
 
           {/* ── Inline Inspection Form ── */}
           {showInspection && record.status === 'done' && (
-            <div onClick={e => e.stopPropagation()} style={{
-              marginTop: 12, padding: 14, borderRadius: 12,
-              background: 'rgba(15,23,42,0.6)',
-              border: '1px solid rgba(168,85,247,0.2)',
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#a855f7', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              onClick={e => e.stopPropagation()}
+              className="mt-3 p-3.5 rounded-xl bg-slate-900/60 border border-violet-500/20"
+              role="form"
+              aria-label="Φόρμα Επιθεώρησης"
+            >
+              <div className="text-sm font-bold mb-2.5 text-violet-500 flex items-center gap-1.5">
                 🔍 Φόρμα Επιθεώρησης
               </div>
 
@@ -423,34 +257,23 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
                 const catItems = INSPECTION_ITEMS.filter(i => i.category === cat);
                 const catLabel = cat === 'exterior' ? 'Εξωτερικά' : cat === 'interior' ? 'Εσωτερικά' : 'Τελικός Έλεγχος';
                 return (
-                  <div key={cat} style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase' }}>{catLabel}</div>
+                  <div key={cat} className="mb-2.5">
+                    <div className="text-[11px] text-slate-500 font-semibold mb-1 uppercase">{catLabel}</div>
                     {catItems.map(item => (
-                      <div key={item.id} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '6px 0', borderBottom: '1px solid rgba(148,163,184,0.04)',
-                      }}>
-                        <span style={{ fontSize: 13, color: '#e2e8f0', flex: 1 }}>{item.label}</span>
-                        <div style={{ display: 'flex', gap: 4 }}>
+                      <div key={item.id} className="flex items-center justify-between py-1.5 border-b border-slate-500/4">
+                        <span className="text-[13px] text-slate-200 flex-1">{item.label}</span>
+                        <div className="flex gap-1">
                           <button
-                            style={{
-                              width: 32, height: 28, borderRadius: 6, border: 'none', cursor: 'pointer',
-                              background: inspItems[item.id] === 'pass' ? '#22c55e' : 'rgba(34,197,94,0.08)',
-                              color: inspItems[item.id] === 'pass' ? '#fff' : '#22c55e',
-                              fontSize: 14, transition: 'all 0.15s',
-                            }}
+                            className={`w-8 h-7 rounded-md border-none cursor-pointer text-sm transition-all ${inspItems[item.id] === 'pass' ? 'bg-green-500 text-white' : 'bg-green-500/8 text-green-500'}`}
                             onClick={() => setInspItems(prev => ({ ...prev, [item.id]: 'pass' }))}
                             title="OK"
+                            aria-label={`${item.label} — OK`}
                           >✓</button>
                           <button
-                            style={{
-                              width: 32, height: 28, borderRadius: 6, border: 'none', cursor: 'pointer',
-                              background: inspItems[item.id] === 'fail' ? '#ef4444' : 'rgba(239,68,68,0.08)',
-                              color: inspItems[item.id] === 'fail' ? '#fff' : '#ef4444',
-                              fontSize: 14, transition: 'all 0.15s',
-                            }}
+                            className={`w-8 h-7 rounded-md border-none cursor-pointer text-sm transition-all ${inspItems[item.id] === 'fail' ? 'bg-red-500 text-white' : 'bg-red-500/8 text-red-500'}`}
                             onClick={() => setInspItems(prev => ({ ...prev, [item.id]: 'fail' }))}
                             title="Αποτυχία"
+                            aria-label={`${item.label} — Αποτυχία`}
                           >✗</button>
                         </div>
                       </div>
@@ -460,19 +283,15 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
               })}
 
               {/* Damage toggle */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 0', marginBottom: 8,
-              }}>
-                <div
+              <div className="flex items-center gap-2 py-2 mb-2">
+                <button
                   onClick={() => setInspDamage(!inspDamage)}
-                  style={{
-                    ...st.checkbox,
-                    ...(inspDamage ? { background: '#ef4444', borderColor: '#ef4444', color: '#fff' } : {}),
-                    cursor: 'pointer',
-                  }}
-                >{inspDamage ? '✓' : ''}</div>
-                <span style={{ fontSize: 13, color: inspDamage ? '#ef4444' : '#e2e8f0' }}>
+                  className={`w-[18px] h-[18px] rounded-[5px] border-2 flex items-center justify-center text-[11px] shrink-0 cursor-pointer transition-all duration-150 ${inspDamage ? 'bg-red-500 border-red-500 text-white' : 'border-slate-500/20 bg-transparent'}`}
+                  role="checkbox"
+                  aria-checked={inspDamage}
+                  aria-label="Εντοπίστηκε ζημιά"
+                >{inspDamage ? '✓' : ''}</button>
+                <span className={`text-[13px] ${inspDamage ? 'text-red-500' : 'text-slate-200'}`}>
                   ⚠️ Εντοπίστηκε ζημιά
                 </span>
               </div>
@@ -483,55 +302,36 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
                 onChange={e => setInspNotes(e.target.value)}
                 placeholder="Σημειώσεις επιθεώρησης..."
                 rows={2}
-                style={{
-                  ...st.input, width: '100%', resize: 'vertical',
-                  fontFamily: 'inherit', marginBottom: 10,
-                }}
+                className="w-full resize-y font-inherit mb-2.5 px-3 py-2 rounded-lg border border-slate-500/15 bg-slate-800/60 text-slate-200 text-sm outline-none transition-colors focus:border-blue-500/40"
+                aria-label="Σημειώσεις επιθεώρησης"
               />
 
               {/* Summary + action buttons */}
               {inspComplete && (
-                <div style={{
-                  padding: '8px 12px', borderRadius: 8, marginBottom: 10,
-                  background: inspPassed ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-                  border: `1px solid ${inspPassed ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-                  fontSize: 13,
-                  color: inspPassed ? '#22c55e' : '#ef4444',
-                }}>
+                <div className={`px-3 py-2 rounded-lg mb-2.5 text-[13px] ${inspPassed ? 'bg-green-500/8 border border-green-500/20 text-green-500' : 'bg-red-500/8 border border-red-500/20 text-red-500'}`}>
                   {inspPassed
                     ? '✅ Όλα τα σημεία ελέγχου OK'
                     : `❌ ${inspFailCount} σημείο(-α) απέτυχε(-αν) — θα ξαναμπεί στην ουρά`}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="flex gap-2">
                 <button
-                  style={{
-                    ...st.actionBtn, ...st.actionBtnPrimary,
-                    background: '#22c55e', borderColor: '#22c55e',
-                    opacity: (!inspComplete || !inspPassed) ? 0.4 : 1,
-                    cursor: (!inspComplete || !inspPassed) ? 'not-allowed' : 'pointer',
-                  }}
+                  className="px-3 py-1.5 rounded-lg border border-green-500 bg-green-500 text-white cursor-pointer text-xs font-medium transition-all hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={!inspComplete || !inspPassed}
                   onClick={() => handleInspectionSubmit(true)}
                 >
                   ✅ Πέρασε
                 </button>
                 <button
-                  style={{
-                    ...st.actionBtn,
-                    background: 'rgba(239,68,68,0.12)',
-                    borderColor: '#ef4444', color: '#ef4444',
-                    opacity: !inspComplete ? 0.4 : 1,
-                    cursor: !inspComplete ? 'not-allowed' : 'pointer',
-                  }}
+                  className="px-3 py-1.5 rounded-lg border border-red-500 bg-red-500/12 text-red-500 cursor-pointer text-xs font-medium transition-all hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={!inspComplete}
                   onClick={() => handleInspectionSubmit(false)}
                 >
                   ↩ Αποτυχία / Ξαναπλύσιμο
                 </button>
                 <button
-                  style={{ ...st.actionBtn }}
+                  className="px-3 py-1.5 rounded-lg border border-slate-500/15 bg-transparent text-slate-400 cursor-pointer text-xs font-medium transition-all hover:bg-slate-500/10"
                   onClick={() => setShowInspection(false)}
                 >
                   Ακύρωση
@@ -540,7 +340,7 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
             </div>
           )}
 
-          <div style={{ fontSize: 11, color: '#64748b', marginTop: 8 }}>
+          <div className="text-[11px] text-slate-500 mt-2">
             Ζητήθηκε: {new Date(record.requestedAt).toLocaleString('el')}
             {record.startedAt && ` • Ξεκίνησε: ${new Date(record.startedAt).toLocaleTimeString('el')}`}
             {record.completedAt && ` • Τέλος: ${new Date(record.completedAt).toLocaleTimeString('el')}`}
@@ -548,7 +348,7 @@ function WashCardDetail({ record, expanded, onToggle }: { record: WashRecord; ex
           </div>
         </>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -576,57 +376,69 @@ export function WasherApp() {
   };
 
   return (
-    <div style={st.page}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-slate-200 flex flex-col">
       {/* Top Bar */}
-      <div style={st.topBar}>
-        <div style={st.topTitle}>🚿 Πλυντήρια</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={st.viewToggle}>
+      <header className="flex justify-between items-center px-5 py-3 border-b border-slate-500/10 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+        <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2">🚿 Πλυντήρια</h1>
+        <div className="flex gap-2 items-center">
+          <div className="flex bg-slate-800/50 rounded-lg p-0.5" role="tablist" aria-label="Εναλλαγή προβολής">
             <button
-              style={{ ...st.viewBtn, ...(washer.viewMode === 'kanban' ? st.viewBtnActive : {}) }}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${washer.viewMode === 'kanban' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               onClick={() => washer.setViewMode('kanban')}
+              role="tab"
+              aria-selected={washer.viewMode === 'kanban'}
             >
               Kanban
             </button>
             <button
-              style={{ ...st.viewBtn, ...(washer.viewMode === 'list' ? st.viewBtnActive : {}) }}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${washer.viewMode === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
               onClick={() => washer.setViewMode('list')}
+              role="tab"
+              aria-selected={washer.viewMode === 'list'}
             >
               Λίστα
             </button>
           </div>
-          <button style={st.btnPrimary} onClick={() => setShowAddForm(!showAddForm)}>
+          <button
+            className="px-3 py-1.5 rounded-lg border-none bg-blue-500 text-white cursor-pointer text-xs font-semibold transition-all hover:bg-blue-600"
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
             ➕ Νέο
           </button>
-          <button style={st.homeBtn} onClick={handleNavigateHome}>🏠</button>
+          <button
+            className="w-9 h-9 rounded-lg border border-slate-500/15 bg-transparent text-lg cursor-pointer transition-all hover:bg-slate-500/10"
+            onClick={handleNavigateHome}
+            aria-label="Αρχική σελίδα"
+          >🏠</button>
         </div>
-      </div>
+      </header>
 
       {/* Stats */}
-      <div style={st.statsBar}>
+      <div className="flex gap-3 px-5 py-3 overflow-x-auto" role="list" aria-label="Στατιστικά ουράς">
         {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
-          <div key={status} style={st.statCard}>
-            <div style={{ ...st.statNumber, color: cfg.color }}>
+          <div key={status} className="flex-1 min-w-[100px] p-3 rounded-xl bg-slate-800/40 border border-slate-500/8 text-center" role="listitem">
+            <div className={`text-2xl font-extrabold ${cfg.color}`}>
               {stats[status === 'in_progress' ? 'inProgress' : status as keyof typeof stats] || 0}
             </div>
-            <div style={st.statLabel}>{cfg.icon} {cfg.label}</div>
+            <div className="text-[11px] text-slate-400 mt-1">{cfg.icon} {cfg.label}</div>
           </div>
         ))}
-        <div style={st.statCard}>
-          <div style={{ ...st.statNumber, color: '#e2e8f0' }}>{washer.todayCompleted}</div>
-          <div style={st.statLabel}>📊 Σήμερα</div>
+        <div className="flex-1 min-w-[100px] p-3 rounded-xl bg-slate-800/40 border border-slate-500/8 text-center" role="listitem">
+          <div className="text-2xl font-extrabold text-slate-200">{washer.todayCompleted}</div>
+          <div className="text-[11px] text-slate-400 mt-1">📊 Σήμερα</div>
         </div>
       </div>
 
       {/* Add Form */}
       {showAddForm && (
-        <div style={st.addForm}>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>➕ Προσθήκη στην Ουρά</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div className="mx-5 mb-3 p-4 rounded-xl bg-slate-800/50 border border-blue-500/15">
+          <div className="text-base font-bold mb-3">➕ Προσθήκη στην Ουρά</div>
+          <div className="flex gap-2.5 flex-wrap items-end">
             <div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Πινακίδα</div>
+              <label className="text-xs text-slate-400 mb-1 block" htmlFor="new-plate">Πινακίδα</label>
               <input
-                style={{ ...st.input, width: 160, textTransform: 'uppercase' }}
+                id="new-plate"
+                className="w-40 uppercase px-3 py-2 rounded-lg border border-slate-500/15 bg-slate-800/60 text-slate-200 text-sm outline-none transition-colors focus:border-blue-500/40"
                 placeholder="ΗΡΑ-0000"
                 value={newPlate}
                 onChange={e => setNewPlate(e.target.value)}
@@ -634,22 +446,26 @@ export function WasherApp() {
               />
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Τύπος</div>
-              <select style={st.select} value={newWashType} onChange={e => setNewWashType(e.target.value as WashType)}>
+              <label className="text-xs text-slate-400 mb-1 block" htmlFor="new-wash-type">Τύπος</label>
+              <select id="new-wash-type" className="px-3 py-2 rounded-lg border border-slate-500/15 bg-slate-800/60 text-slate-200 text-sm outline-none cursor-pointer transition-colors focus:border-blue-500/40" value={newWashType} onChange={e => setNewWashType(e.target.value as WashType)}>
                 {Object.entries(WASH_TYPE_CONFIG).map(([k, v]) => (
                   <option key={k} value={k}>{v.icon} {v.label} (~{v.minutes}\')</option>
                 ))}
               </select>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Προτεραιότητα</div>
-              <select style={st.select} value={newPriority} onChange={e => setNewPriority(e.target.value as WashRecord['priority'])}>
+              <label className="text-xs text-slate-400 mb-1 block" htmlFor="new-priority">Προτεραιότητα</label>
+              <select id="new-priority" className="px-3 py-2 rounded-lg border border-slate-500/15 bg-slate-800/60 text-slate-200 text-sm outline-none cursor-pointer transition-colors focus:border-blue-500/40" value={newPriority} onChange={e => setNewPriority(e.target.value as WashRecord['priority'])}>
                 {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
                   <option key={k} value={k}>{v.label}</option>
                 ))}
               </select>
             </div>
-            <button style={st.btnPrimary} onClick={handleAddToQueue} disabled={!newPlate.trim()}>
+            <button
+              className="px-3 py-2 rounded-lg border-none bg-blue-500 text-white cursor-pointer text-sm font-semibold transition-all hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleAddToQueue}
+              disabled={!newPlate.trim()}
+            >
               Προσθήκη
             </button>
           </div>
@@ -658,21 +474,21 @@ export function WasherApp() {
 
       {/* Kanban View */}
       {washer.viewMode === 'kanban' && (
-        <div style={st.kanbanContainer}>
+        <div className="flex gap-4 px-5 py-3 flex-1 overflow-x-auto min-h-0">
           {(['waiting', 'in_progress', 'done', 'inspected'] as WashStatus[]).map(status => {
             const cfg = STATUS_CONFIG[status];
             const records = byStatus[status] || [];
             return (
-              <div key={status} style={st.kanbanColumn}>
-                <div style={{ ...st.columnHeader, background: `${cfg.color}08` }}>
-                  <div style={st.columnTitle}>
+              <section key={status} className="flex-1 min-w-[260px] flex flex-col rounded-xl bg-slate-800/30 border border-slate-500/8 overflow-hidden">
+                <div className={`flex justify-between items-center px-3.5 py-2.5 ${STATUS_RAW_COLORS[status].headerBg}`}>
+                  <div className="font-semibold text-sm flex items-center gap-1.5">
                     <span>{cfg.icon}</span> {cfg.label}
                   </div>
-                  <div style={{ ...st.columnCount, background: `${cfg.color}15`, color: cfg.color }}>
+                  <div className={`px-2 py-0.5 rounded-md text-xs font-bold ${STATUS_RAW_COLORS[status].countBg} ${cfg.color}`}>
                     {records.length}
                   </div>
                 </div>
-                <div style={st.columnBody}>
+                <div className="flex-1 overflow-y-auto p-2.5" role="list" aria-label={`${cfg.label} ουρά`}>
                   {records.map(record => (
                     <WashCardDetail
                       key={record.id}
@@ -682,12 +498,12 @@ export function WasherApp() {
                     />
                   ))}
                   {records.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: 24, color: '#475569', fontSize: 13 }}>
+                    <div className="text-center py-6 text-slate-600 text-[13px]">
                       Κενό
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>
@@ -695,36 +511,40 @@ export function WasherApp() {
 
       {/* List View */}
       {washer.viewMode === 'list' && (
-        <div style={{ padding: 20, flex: 1, overflowY: 'auto' }}>
+        <div className="p-5 flex-1 overflow-y-auto">
           {washer.getFilteredQueue().length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🚿</div>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>Η ουρά είναι κενή</div>
-              <div style={{ fontSize: 13, marginTop: 4 }}>Πατήστε «➕ Νέο» για να προσθέσετε όχημα</div>
+            <div className="text-center py-10 text-slate-500">
+              <div className="text-5xl mb-4" aria-hidden="true">🚿</div>
+              <div className="text-base font-semibold">Η ουρά είναι κενή</div>
+              <div className="text-[13px] mt-1">Πατήστε «➕ Νέο» για να προσθέσετε όχημα</div>
             </div>
           ) : (
             washer.getFilteredQueue().map(record => {
               const cfg = STATUS_CONFIG[record.status];
               const wtc = WASH_TYPE_CONFIG[record.washType];
               return (
-                <div key={record.id} style={st.listRow} onClick={() => setExpandedId(expandedId === record.id ? null : record.id)}>
-                  <div style={{ fontSize: 20 }}>{cfg.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, letterSpacing: 0.5 }}>{record.plate}</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                <button
+                  key={record.id}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl mb-1.5 bg-slate-800/30 border border-slate-500/8 cursor-pointer transition-all hover:bg-slate-800/50 text-left"
+                  onClick={() => setExpandedId(expandedId === record.id ? null : record.id)}
+                >
+                  <div className="text-xl">{cfg.icon}</div>
+                  <div className="flex-1">
+                    <div className="font-bold text-[15px] tracking-wide">{record.plate}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">
                       {wtc.icon} {wtc.label} • {cfg.label}
                       {record.assignedTo && ` • Ανατέθηκε`}
                     </div>
                   </div>
                   {record.priority !== 'normal' && (
-                    <div style={{ ...st.badge, background: `${PRIORITY_CONFIG[record.priority].color}15`, color: PRIORITY_CONFIG[record.priority].color }}>
+                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${PRIORITY_CONFIG[record.priority].bg} ${PRIORITY_CONFIG[record.priority].color}`}>
                       {PRIORITY_CONFIG[record.priority].label}
-                    </div>
+                    </span>
                   )}
-                  <div style={{ fontSize: 12, color: '#64748b' }}>
+                  <div className="text-xs text-slate-500">
                     {new Date(record.requestedAt).toLocaleTimeString('el', { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                </div>
+                </button>
               );
             })
           )}

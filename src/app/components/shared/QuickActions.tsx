@@ -9,82 +9,7 @@ import type { QuickAction } from '../../types/platform';
 // Fixes: ARIA roles, focus trap, number keys, stale closures,
 //        focusIndex bounds, error handling, reduced motion, FAB badge.
 
-const qa: Record<string, React.CSSProperties> = {
-  fab: {
-    position: 'fixed', bottom: 90, right: 20,
-    width: 56, height: 56, borderRadius: '50%',
-    background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
-    border: 'none', color: '#fff', fontSize: 24,
-    cursor: 'pointer', zIndex: 9000,
-    boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'transform 0.3s, box-shadow 0.3s',
-    WebkitTapHighlightColor: 'transparent',
-    touchAction: 'manipulation',
-  },
-  fabOpen: {
-    transform: 'rotate(45deg)',
-    boxShadow: '0 4px 30px rgba(99,102,241,0.6)',
-  },
-  fabBadge: {
-    position: 'absolute' as const, top: -2, right: -2,
-    minWidth: 18, height: 18, borderRadius: 9,
-    background: '#ef4444', color: '#fff',
-    fontSize: 10, fontWeight: 700,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '0 4px', lineHeight: 1,
-    boxShadow: '0 0 0 2px rgba(15,23,42,0.95)',
-  },
-  overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-    backdropFilter: 'blur(4px)', zIndex: 8999,
-  },
-  menu: {
-    position: 'fixed', bottom: 156, right: 16,
-    background: 'rgba(15,23,42,0.97)', borderRadius: 20,
-    border: '1px solid rgba(148,163,184,0.12)',
-    backdropFilter: 'blur(20px)', padding: 8,
-    zIndex: 9001, minWidth: 280, maxWidth: 340,
-    maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' as const,
-    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-  },
-  searchWrap: { padding: '4px 8px 8px' },
-  searchInput: {
-    width: '100%', padding: '10px 14px', borderRadius: 10,
-    border: '1px solid rgba(148,163,184,0.15)',
-    background: 'rgba(15,23,42,0.6)', color: '#e2e8f0',
-    fontSize: 14, outline: 'none', boxSizing: 'border-box' as const,
-  },
-  menuItem: {
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: '12px 14px', borderRadius: 12,
-    border: '2px solid transparent', background: 'transparent',
-    color: '#e2e8f0', cursor: 'pointer', width: '100%',
-    fontSize: 14, fontWeight: 500, textAlign: 'left' as const,
-    transition: 'background 0.1s, border-color 0.1s',
-    outline: 'none', minHeight: 48,
-  },
-  menuItemFocused: {
-    background: 'rgba(59,130,246,0.1)',
-    borderColor: 'rgba(59,130,246,0.4)',
-  },
-  menuItemIcon: {
-    width: 36, height: 36, borderRadius: 10,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 18, background: 'rgba(59,130,246,0.08)', flexShrink: 0,
-  },
-  shortcutHint: {
-    marginLeft: 'auto', fontSize: 10, color: '#475569',
-    fontFamily: 'monospace', padding: '2px 6px', borderRadius: 4,
-    background: 'rgba(51,65,85,0.3)',
-  },
-  divider: { height: 1, background: 'rgba(148,163,184,0.08)', margin: '4px 8px' },
-  badge: {
-    marginLeft: 'auto', padding: '2px 8px', borderRadius: 6,
-    fontSize: 10, fontWeight: 600, background: 'rgba(59,130,246,0.1)', color: '#60a5fa',
-  },
-  emptyState: { padding: '20px 12px', textAlign: 'center' as const, color: '#64748b', fontSize: 13 },
-};
+// Tailwind classes used directly in JSX
 
 interface Props {
   onAction: (actionId: string) => void;
@@ -200,47 +125,90 @@ export function QuickActions({ onAction, chatUnread = 0 }: Props) {
 
   return (
     <>
-      {isOpen && <div style={qa.overlay} onClick={closeMenu} role="presentation" />}
       {isOpen && (
-        <div ref={menuRef} style={qa.menu} role="menu" aria-label="Γρήγορες Ενέργειες" onKeyDown={handleMenuKeyDown}>
-          <div style={{ padding: '8px 12px 2px', fontSize: 12, color: '#64748b', fontWeight: 600 }}>⚡ Γρήγορες Ενέργειες</div>
-          <div style={qa.searchWrap}>
-            <input ref={searchRef} style={qa.searchInput} placeholder="🔍 Αναζήτηση ενέργειας..." value={search} onChange={e => setSearch(e.target.value)} aria-label="Αναζήτηση ενεργειών" role="searchbox" />
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[8999]"
+          onClick={closeMenu}
+          role="presentation"
+          aria-hidden="true"
+        />
+      )}
+      {isOpen && (
+        <div
+          ref={menuRef}
+          className="fixed bottom-[156px] right-4 bg-slate-900/[0.97] rounded-[20px] border border-slate-400/[0.12] backdrop-blur-[20px] p-2 z-[9001] min-w-[280px] max-w-[340px] max-h-[calc(100vh-200px)] overflow-y-auto shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+          role="menu"
+          aria-label="Γρήγορες Ενέργειες"
+          onKeyDown={handleMenuKeyDown}
+        >
+          <div className="pt-2 px-3 pb-0.5 text-xs text-slate-500 font-semibold" aria-hidden="true">
+            ⚡ Γρήγορες Ενέργειες
+          </div>
+          <div className="pt-1 px-2 pb-2">
+            <input
+              ref={searchRef}
+              className="w-full py-2.5 px-3.5 rounded-[10px] border border-slate-400/[0.15] bg-slate-900/60 text-slate-200 text-sm outline-none box-border"
+              placeholder="🔍 Αναζήτηση ενέργειας..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              aria-label="Αναζήτηση ενεργειών"
+              role="searchbox"
+            />
           </div>
           {availableActions.length === 0 ? (
-            <div style={qa.emptyState}><div style={{ fontSize: 24, marginBottom: 8 }}>🔍</div>Δεν βρέθηκαν ενέργειες</div>
+            <div className="py-5 px-3 text-center text-slate-500 text-[13px]">
+              <div className="text-2xl mb-2" aria-hidden="true">🔍</div>
+              Δεν βρέθηκαν ενέργειες
+            </div>
           ) : (
             availableActions.map((action, i) => (
               <React.Fragment key={action.id}>
-                {i > 0 && action.category !== availableActions[i - 1].category && <div style={qa.divider} role="separator" />}
+                {i > 0 && action.category !== availableActions[i - 1].category && (
+                  <div className="h-px bg-slate-400/[0.08] mx-2 my-1" role="separator" aria-hidden="true" />
+                )}
                 <button
                   ref={el => { itemRefs.current[i] = el; }}
-                  style={{ ...qa.menuItem, ...(i === focusIndex ? qa.menuItemFocused : {}) }}
+                  className={`flex items-center gap-3 py-3 px-3.5 rounded-xl border-2 border-transparent bg-transparent text-slate-200 cursor-pointer w-full text-sm font-medium text-left transition-[background,border-color] duration-100 outline-none min-h-12 ${
+                    i === focusIndex ? 'bg-blue-500/10 !border-blue-500/40' : ''
+                  }`}
                   onClick={() => handleAction(action)}
                   onMouseEnter={() => setFocusIndex(i)}
                   role="menuitem"
                   tabIndex={i === focusIndex ? 0 : -1}
                   aria-label={`${action.label}${i < 9 ? ` (πλήκτρο ${i + 1})` : ''}`}
                 >
-                  <div style={qa.menuItemIcon}>{action.icon}</div>
-                  <div><div>{action.label}</div><div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{action.labelEn}</div></div>
+                  <div className="w-9 h-9 rounded-[10px] flex items-center justify-center text-lg bg-blue-500/[0.08] shrink-0" aria-hidden="true">
+                    {action.icon}
+                  </div>
+                  <div>
+                    <div>{action.label}</div>
+                    <div className="text-[11px] text-slate-500 mt-px">{action.labelEn}</div>
+                  </div>
                   {action.action === 'open_chat' && chatUnread > 0 && (
-                    <span style={{ ...qa.badge, background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>{chatUnread}</span>
+                    <span className="ml-auto py-0.5 px-2 rounded-md text-[10px] font-semibold bg-red-500/[0.15] text-red-500">
+                      {chatUnread}
+                    </span>
                   )}
-                  {i < 9 && <span style={qa.shortcutHint}>{i + 1}</span>}
+                  {i < 9 && (
+                    <span className="ml-auto text-[10px] text-slate-600 font-mono py-0.5 px-1.5 rounded bg-slate-700/30" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                  )}
                 </button>
               </React.Fragment>
             ))
           )}
-          <div style={qa.divider} role="separator" />
-          <div style={{ padding: '6px 12px 8px', fontSize: 11, color: '#475569', textAlign: 'center' }}>
+          <div className="h-px bg-slate-400/[0.08] mx-2 my-1" role="separator" aria-hidden="true" />
+          <div className="py-1.5 px-3 pb-2 text-[11px] text-slate-600 text-center" aria-hidden="true">
             ⌘K εναλλαγή · ↑↓ πλοήγηση · Enter επιλογή · 1-9 γρήγορη πρόσβαση
           </div>
         </div>
       )}
       <button
         ref={fabRef}
-        style={{ ...qa.fab, ...(isOpen ? qa.fabOpen : {}) }}
+        className={`fixed bottom-[90px] right-5 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 border-none text-white text-2xl cursor-pointer z-[9000] shadow-[0_4px_20px_rgba(59,130,246,0.4)] flex items-center justify-center transition-[transform,box-shadow] duration-300 touch-manipulation [-webkit-tap-highlight-color:transparent] ${
+          isOpen ? 'rotate-45 shadow-[0_4px_30px_rgba(99,102,241,0.6)]' : ''
+        }`}
         onClick={() => isOpen ? closeMenu() : openMenu()}
         aria-label="Γρήγορες ενέργειες"
         aria-expanded={isOpen}
@@ -248,7 +216,11 @@ export function QuickActions({ onAction, chatUnread = 0 }: Props) {
         title="Γρήγορες Ενέργειες (⌘K)"
       >
         {isOpen ? '✕' : '⚡'}
-        {!isOpen && chatUnread > 0 && <span style={qa.fabBadge}>{chatUnread > 99 ? '99+' : chatUnread}</span>}
+        {!isOpen && chatUnread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none shadow-[0_0_0_2px_rgba(15,23,42,0.95)]">
+            {chatUnread > 99 ? '99+' : chatUnread}
+          </span>
+        )}
       </button>
     </>
   );

@@ -8,43 +8,12 @@ export default function ChatPage() {
   const navigate = useNavigate();
 
   return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      overflow: 'hidden',
-      position: 'relative',
-      background: '#0f0d2e',
-    }}>
+    <div className="w-full h-screen overflow-hidden relative bg-[oklch(0.15_0.04_270)]  dark:bg-[oklch(0.15_0.04_270)]">
       {/* Back to main app button */}
       <button
         onClick={() => navigate('/')}
-        style={{
-          position: 'fixed',
-          top: 12,
-          right: 16,
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '8px 14px',
-          borderRadius: 10,
-          border: '1px solid rgba(255,255,255,0.12)',
-          background: 'rgba(15,13,46,0.9)',
-          backdropFilter: 'blur(10px)',
-          color: 'rgba(255,255,255,0.7)',
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: 'pointer',
-          transition: 'all 0.15s',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = 'rgba(99,102,241,0.2)';
-          e.currentTarget.style.color = '#fff';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'rgba(15,13,46,0.9)';
-          e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-        }}
+        aria-label="Επιστροφή στο πρόγραμμα βαρδιών"
+        className="fixed top-3 right-4 z-50 flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] border border-white/12 bg-[oklch(0.15_0.04_270/0.9)] backdrop-blur-[10px] text-white/70 text-xs font-semibold cursor-pointer transition-all duration-150 hover:bg-indigo-500/20 hover:text-white focus-visible:outline-2 focus-visible:outline-indigo-400 focus-visible:outline-offset-2"
       >
         ← Πρόγραμμα Βαρδιών
       </button>

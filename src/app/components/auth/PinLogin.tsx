@@ -1,144 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import type { UserRole } from '../../types/chat';
 
 // ─── PIN Login & Sign-Up Screen ──────────────────────────────
 // Full-screen auth: login (select user or type name) or sign up (name + PIN).
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    color: '#e2e8f0', zIndex: 9999,
-  },
-  logo: {
-    fontSize: 48, marginBottom: 8,
-  },
-  title: {
-    fontSize: 28, fontWeight: 700, marginBottom: 4, letterSpacing: '0.5px',
-  },
-  subtitle: {
-    fontSize: 14, color: '#94a3b8', marginBottom: 32,
-  },
-  card: {
-    background: 'rgba(30, 41, 59, 0.8)', borderRadius: 24,
-    border: '1px solid rgba(148, 163, 184, 0.1)',
-    backdropFilter: 'blur(20px)', padding: '32px 28px',
-    width: 380, maxWidth: '92vw',
-    boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
-  },
-  tabRow: {
-    display: 'flex', gap: 0, marginBottom: 24, borderRadius: 14, overflow: 'hidden',
-    border: '1px solid rgba(148, 163, 184, 0.15)',
-  },
-  tab: {
-    flex: 1, padding: '12px 16px', fontSize: 14, fontWeight: 600,
-    cursor: 'pointer', border: 'none', color: '#94a3b8',
-    background: 'rgba(15, 23, 42, 0.4)', transition: 'all 0.2s',
-    textAlign: 'center' as const,
-  },
-  tabActive: {
-    color: '#e2e8f0', background: 'rgba(59, 130, 246, 0.2)',
-  },
-  input: {
-    width: '100%', padding: '12px 14px', borderRadius: 12,
-    border: '1px solid rgba(148, 163, 184, 0.15)',
-    background: 'rgba(15, 23, 42, 0.5)', color: '#e2e8f0',
-    fontSize: 15, outline: 'none', marginBottom: 12, boxSizing: 'border-box' as const,
-  },
-  label: {
-    fontSize: 12, color: '#94a3b8', marginBottom: 6, display: 'block',
-  },
-  userSelect: {
-    display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 20,
-    maxHeight: 240, overflowY: 'auto' as const, paddingRight: 4,
-  },
-  userBtn: {
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: '12px 16px', borderRadius: 14,
-    border: '1px solid rgba(148, 163, 184, 0.1)',
-    background: 'rgba(51, 65, 85, 0.4)', cursor: 'pointer',
-    transition: 'all 0.2s', color: '#e2e8f0', width: '100%',
-    fontSize: 14, textAlign: 'left' as const,
-  },
-  userBtnActive: {
-    border: '1px solid #3b82f6', background: 'rgba(59, 130, 246, 0.15)',
-    boxShadow: '0 0 20px rgba(59, 130, 246, 0.1)',
-  },
-  avatar: {
-    fontSize: 24, width: 40, height: 40, borderRadius: 12,
-    background: 'rgba(51, 65, 85, 0.6)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  userName: {
-    fontWeight: 600, fontSize: 14,
-  },
-  userRole: {
-    fontSize: 11, color: '#94a3b8', marginTop: 2,
-  },
-  pinSection: {
-    display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 16,
-  },
-  pinLabel: {
-    fontSize: 14, color: '#94a3b8',
-  },
-  pinDots: {
-    display: 'flex', gap: 12, marginBottom: 8,
-  },
-  dot: {
-    width: 16, height: 16, borderRadius: '50%',
-    border: '2px solid rgba(148, 163, 184, 0.3)',
-    transition: 'all 0.2s',
-  },
-  dotFilled: {
-    background: '#3b82f6', borderColor: '#3b82f6',
-    boxShadow: '0 0 12px rgba(59, 130, 246, 0.4)',
-  },
-  dotConfirm: {
-    background: '#10b981', borderColor: '#10b981',
-    boxShadow: '0 0 12px rgba(16, 185, 129, 0.4)',
-  },
-  numpad: {
-    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 10, width: '100%', maxWidth: 240, margin: '0 auto',
-  },
-  numKey: {
-    width: '100%', aspectRatio: '1.3', borderRadius: 16,
-    border: '1px solid rgba(148, 163, 184, 0.12)',
-    background: 'rgba(51, 65, 85, 0.3)', color: '#e2e8f0',
-    fontSize: 24, fontWeight: 600, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.15s',
-  },
-  numKeySpecial: {
-    fontSize: 16, fontWeight: 500,
-  },
-  error: {
-    color: '#ef4444', fontSize: 13, textAlign: 'center' as const,
-    marginTop: 8, minHeight: 20,
-  },
-  success: {
-    color: '#10b981', fontSize: 13, textAlign: 'center' as const,
-    marginTop: 8, minHeight: 20,
-  },
-  backBtn: {
-    fontSize: 14, color: '#94a3b8', cursor: 'pointer',
-    background: 'none', border: 'none', marginTop: 16,
-    padding: '8px 16px',
-  },
-  roleSelect: {
-    width: '100%', padding: '10px 14px', borderRadius: 12,
-    border: '1px solid rgba(148, 163, 184, 0.15)',
-    background: 'rgba(15, 23, 42, 0.5)', color: '#e2e8f0',
-    fontSize: 14, outline: 'none', marginBottom: 16, boxSizing: 'border-box' as const,
-    appearance: 'none' as const, cursor: 'pointer',
-  },
-  version: {
-    position: 'absolute' as const, bottom: 16, fontSize: 11, color: '#475569',
-  },
-};
+// Tailwind classes used directly in JSX
 
 const ROLE_LABELS: Record<string, string> = {
   coordinator: 'Συντονιστής',
@@ -341,18 +208,16 @@ export function PinLogin({ onLogin }: { onLogin: () => void }) {
 
   // ─── Numpad component ───
   const Numpad = () => (
-    <div style={styles.numpad}>
+    <div className="grid grid-cols-3 gap-2.5 w-full max-w-[240px] mx-auto" role="group" aria-label="Αριθμητικό πληκτρολόγιο">
       {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'].map(key => (
         <button
           key={key}
-          style={{
-            ...styles.numKey,
-            ...(key === 'clear' || key === 'back' ? styles.numKeySpecial : {}),
-          }}
+          type="button"
+          className={`w-full aspect-[1.3] rounded-2xl border border-slate-400/[0.12] bg-slate-700/30 text-slate-200 cursor-pointer flex items-center justify-center transition-all active:scale-[0.92] ${
+            key === 'clear' || key === 'back' ? 'text-base font-medium' : 'text-2xl font-semibold'
+          }`}
           onClick={() => handleNumPress(key)}
-          onMouseDown={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(0.92)'; }}
-          onMouseUp={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
+          aria-label={key === 'clear' ? 'Καθαρισμός' : key === 'back' ? 'Διαγραφή' : key}
         >
           {key === 'clear' ? 'C' : key === 'back' ? '⌫' : key}
         </button>
@@ -362,80 +227,103 @@ export function PinLogin({ onLogin }: { onLogin: () => void }) {
 
   // ─── PIN dots ───
   const PinDots = ({ filled, isConfirm = false }: { filled: number; isConfirm?: boolean }) => (
-    <div style={styles.pinDots}>
+    <div className="flex gap-3 mb-2" role="status" aria-label={`PIN: ${filled} από 4 ψηφία`}>
       {[0, 1, 2, 3].map(i => (
-        <div key={i} style={{
-          ...styles.dot,
-          ...(i < filled ? (isConfirm ? styles.dotConfirm : styles.dotFilled) : {}),
-        }} />
+        <div
+          key={i}
+          aria-hidden="true"
+          className={`w-4 h-4 rounded-full border-2 transition-all ${
+            i < filled
+              ? isConfirm
+                ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                : 'bg-blue-500 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+              : 'border-slate-400/30'
+          }`}
+        />
       ))}
     </div>
   );
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.logo}>🚗</div>
-      <div style={styles.title}>Station Manager</div>
-      <div style={styles.subtitle}>Σταθμός Ηράκλειο • GoldCar & Europcar</div>
+  const isSignupValid = signupName.trim().length >= 2;
 
-      <div style={styles.card}>
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 font-sans text-slate-200 z-[9999]">
+      <div className="text-5xl mb-2" aria-hidden="true">🚗</div>
+      <h1 className="text-[28px] font-bold mb-1 tracking-[0.5px]">Station Manager</h1>
+      <p className="text-sm text-slate-400 mb-8">Σταθμός Ηράκλειο • GoldCar & Europcar</p>
+
+      <div className="bg-slate-800/80 rounded-3xl border border-slate-400/10 backdrop-blur-xl py-8 px-7 w-[380px] max-w-[92vw] shadow-[0_25px_50px_rgba(0,0,0,0.4)]">
         {/* ─── Tab Bar ─── */}
-        <div style={styles.tabRow}>
+        <div className="flex mb-6 rounded-[14px] overflow-hidden border border-slate-400/15" role="tablist">
           <button
-            style={{ ...styles.tab, ...(mode === 'login' ? styles.tabActive : {}) }}
+            type="button"
+            role="tab"
+            aria-selected={mode === 'login'}
+            className={`flex-1 py-3 px-4 text-sm font-semibold cursor-pointer border-none transition-all text-center ${
+              mode === 'login' ? 'text-slate-200 bg-blue-500/20' : 'text-slate-400 bg-slate-950/40'
+            }`}
             onClick={() => switchMode('login')}
           >
-            🔑 Σύνδεση
+            <span aria-hidden="true">🔑 </span>Σύνδεση
           </button>
           <button
-            style={{ ...styles.tab, ...(mode === 'signup' ? styles.tabActive : {}) }}
+            type="button"
+            role="tab"
+            aria-selected={mode === 'signup'}
+            className={`flex-1 py-3 px-4 text-sm font-semibold cursor-pointer border-none transition-all text-center ${
+              mode === 'signup' ? 'text-slate-200 bg-blue-500/20' : 'text-slate-400 bg-slate-950/40'
+            }`}
             onClick={() => switchMode('signup')}
           >
-            ✨ Εγγραφή
+            <span aria-hidden="true">✨ </span>Εγγραφή
           </button>
         </div>
 
         {/* ─── LOGIN MODE ─── */}
         {mode === 'login' && loginStep === 'select' && (
           <>
+            <label htmlFor="user-search" className="sr-only">Αναζήτηση χρήστη</label>
             <input
-              style={styles.input}
+              id="user-search"
+              className="w-full py-3 px-3.5 rounded-xl border border-slate-400/15 bg-slate-950/50 text-slate-200 text-[15px] outline-none mb-3 box-border"
               placeholder="🔍 Αναζήτηση ονόματος..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               autoFocus
             />
-            <div style={styles.userSelect}>
+            <div className="flex flex-col gap-2 mb-5 max-h-60 overflow-y-auto pr-1" role="listbox" aria-label="Επιλογή χρήστη">
               {filteredProfiles.map(profile => (
                 <button
                   key={profile.id}
-                  style={{
-                    ...styles.userBtn,
-                    ...(selectedUserId === profile.id ? styles.userBtnActive : {}),
-                  }}
+                  type="button"
+                  role="option"
+                  aria-selected={selectedUserId === profile.id}
+                  className={`flex items-center gap-3 py-3 px-4 rounded-[14px] border cursor-pointer transition-all text-slate-200 w-full text-sm text-left hover:bg-blue-500/[0.12] hover:border-blue-500/30 ${
+                    selectedUserId === profile.id
+                      ? 'border-blue-500 bg-blue-500/15 shadow-[0_0_20px_rgba(59,130,246,0.1)]'
+                      : 'border-slate-400/10 bg-slate-700/40'
+                  }`}
                   onClick={() => handleSelectUser(profile.id)}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(59, 130, 246, 0.12)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(51, 65, 85, 0.4)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(148, 163, 184, 0.1)';
-                  }}
                 >
-                  <div style={styles.avatar}>{profile.avatar}</div>
+                  <div className="text-2xl w-10 h-10 rounded-xl bg-slate-700/60 flex items-center justify-center shrink-0" aria-hidden="true">
+                    {profile.avatar}
+                  </div>
                   <div>
-                    <div style={styles.userName}>{profile.name}</div>
-                    <div style={styles.userRole}>{ROLE_LABELS[profile.role] || profile.role}</div>
+                    <div className="font-semibold text-sm">{profile.name}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">{ROLE_LABELS[profile.role] || profile.role}</div>
                   </div>
                 </button>
               ))}
               {filteredProfiles.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#64748b', padding: 20, fontSize: 14 }}>
-                  Δεν βρέθηκε χρήστης. Δοκιμάστε την <button
-                    style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}
+                <div className="text-center text-slate-500 p-5 text-sm">
+                  Δεν βρέθηκε χρήστης. Δοκιμάστε την{' '}
+                  <button
+                    type="button"
+                    className="text-blue-500 bg-transparent border-none cursor-pointer text-sm underline"
                     onClick={() => switchMode('signup')}
-                  >Εγγραφή</button>.
+                  >
+                    Εγγραφή
+                  </button>.
                 </div>
               )}
             </div>
@@ -443,21 +331,25 @@ export function PinLogin({ onLogin }: { onLogin: () => void }) {
         )}
 
         {mode === 'login' && loginStep === 'pin' && (
-          <div style={styles.pinSection}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ ...styles.avatar, fontSize: 28, width: 48, height: 48 }}>{selectedUser?.avatar}</div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="text-[28px] w-12 h-12 rounded-xl bg-slate-700/60 flex items-center justify-center shrink-0" aria-hidden="true">
+                {selectedUser?.avatar}
+              </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{selectedUser?.name}</div>
-                <div style={{ fontSize: 12, color: '#94a3b8' }}>{ROLE_LABELS[selectedUser?.role || '']}</div>
+                <div className="font-bold text-base">{selectedUser?.name}</div>
+                <div className="text-xs text-slate-400">{ROLE_LABELS[selectedUser?.role || '']}</div>
               </div>
             </div>
 
-            <div style={styles.pinLabel}>Εισάγετε PIN</div>
+            <p className="text-sm text-slate-400">Εισάγετε PIN</p>
             <PinDots filled={pin.length} />
             <Numpad />
-            <div style={styles.error}>{isLoggingIn ? 'Επαλήθευση...' : error}</div>
+            <div className="text-red-500 text-[13px] text-center mt-2 min-h-[20px]" role="alert">
+              {isLoggingIn ? 'Επαλήθευση...' : error}
+            </div>
 
-            <button style={styles.backBtn} onClick={handleLoginBack}>
+            <button type="button" className="text-sm text-slate-400 cursor-pointer bg-transparent border-none mt-4 py-2 px-4" onClick={handleLoginBack}>
               ← Επιλογή χρήστη
             </button>
           </div>
@@ -465,19 +357,22 @@ export function PinLogin({ onLogin }: { onLogin: () => void }) {
 
         {/* ─── SIGNUP MODE ─── */}
         {mode === 'signup' && signupStep === 'form' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={styles.label}>Όνομα *</label>
+          <form className="flex flex-col gap-1" onSubmit={e => { e.preventDefault(); handleSignupFormNext(); }}>
+            <label htmlFor="signup-name" className="text-xs text-slate-400 mb-1.5 block">Όνομα *</label>
             <input
-              style={styles.input}
+              id="signup-name"
+              className="w-full py-3 px-3.5 rounded-xl border border-slate-400/15 bg-slate-950/50 text-slate-200 text-[15px] outline-none mb-3 box-border"
               placeholder="π.χ. Γιάννης Παπαδόπουλος"
               value={signupName}
               onChange={e => { setSignupName(e.target.value); setError(''); }}
               autoFocus
               maxLength={40}
+              autoComplete="name"
             />
-            <label style={styles.label}>Ρόλος</label>
+            <label htmlFor="signup-role" className="text-xs text-slate-400 mb-1.5 block">Ρόλος</label>
             <select
-              style={styles.roleSelect}
+              id="signup-role"
+              className="w-full py-2.5 px-3.5 rounded-xl border border-slate-400/15 bg-slate-950/50 text-slate-200 text-sm outline-none mb-4 box-border appearance-none cursor-pointer"
               value={signupRole}
               onChange={e => setSignupRole(e.target.value as UserRole)}
             >
@@ -486,55 +381,54 @@ export function PinLogin({ onLogin }: { onLogin: () => void }) {
               ))}
             </select>
             <button
-              style={{
-                width: '100%', padding: '14px', borderRadius: 14, border: 'none',
-                background: signupName.trim().length >= 2 ? 'linear-gradient(135deg, #3b82f6, #6366f1)' : 'rgba(51, 65, 85, 0.5)',
-                color: '#fff', fontSize: 16, fontWeight: 700, cursor: signupName.trim().length >= 2 ? 'pointer' : 'default',
-                transition: 'all 0.2s', marginTop: 8,
-              }}
-              onClick={handleSignupFormNext}
-              disabled={signupName.trim().length < 2}
+              type="submit"
+              className={`w-full p-3.5 rounded-[14px] border-none text-white text-base font-bold transition-all mt-2 ${
+                isSignupValid
+                  ? 'bg-gradient-to-br from-blue-500 to-indigo-500 cursor-pointer'
+                  : 'bg-slate-700/50 cursor-default'
+              }`}
+              disabled={!isSignupValid}
             >
               Συνέχεια →
             </button>
-            {error && <div style={styles.error}>{error}</div>}
-          </div>
+            {error && <div className="text-red-500 text-[13px] text-center mt-2 min-h-[20px]" role="alert">{error}</div>}
+          </form>
         )}
 
         {mode === 'signup' && signupStep === 'pin' && (
-          <div style={styles.pinSection}>
-            <div style={{ textAlign: 'center', marginBottom: 8 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{signupName}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>{ROLE_LABELS[signupRole]}</div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-center mb-2">
+              <div className="font-bold text-base">{signupName}</div>
+              <div className="text-xs text-slate-400">{ROLE_LABELS[signupRole]}</div>
             </div>
-            <div style={styles.pinLabel}>Δημιουργήστε PIN (4 ψηφία)</div>
+            <p className="text-sm text-slate-400">Δημιουργήστε PIN (4 ψηφία)</p>
             <PinDots filled={pin.length} />
             <Numpad />
-            {error && <div style={styles.error}>{error}</div>}
-            <button style={styles.backBtn} onClick={handleSignupBack}>
+            {error && <div className="text-red-500 text-[13px] text-center mt-2 min-h-[20px]" role="alert">{error}</div>}
+            <button type="button" className="text-sm text-slate-400 cursor-pointer bg-transparent border-none mt-4 py-2 px-4" onClick={handleSignupBack}>
               ← Πίσω
             </button>
           </div>
         )}
 
         {mode === 'signup' && signupStep === 'confirm' && (
-          <div style={styles.pinSection}>
-            <div style={{ textAlign: 'center', marginBottom: 8 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{signupName}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>{ROLE_LABELS[signupRole]}</div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-center mb-2">
+              <div className="font-bold text-base">{signupName}</div>
+              <div className="text-xs text-slate-400">{ROLE_LABELS[signupRole]}</div>
             </div>
-            <div style={styles.pinLabel}>Επιβεβαιώστε το PIN</div>
+            <p className="text-sm text-slate-400">Επιβεβαιώστε το PIN</p>
             <PinDots filled={pin.length} isConfirm />
             <Numpad />
-            {error && <div style={styles.error}>{error}</div>}
-            <button style={styles.backBtn} onClick={handleSignupBack}>
+            {error && <div className="text-red-500 text-[13px] text-center mt-2 min-h-[20px]" role="alert">{error}</div>}
+            <button type="button" className="text-sm text-slate-400 cursor-pointer bg-transparent border-none mt-4 py-2 px-4" onClick={handleSignupBack}>
               ← Πίσω
             </button>
           </div>
         )}
       </div>
 
-      <div style={styles.version}>v2.0.0 • Station Manager</div>
+      <div className="absolute bottom-4 text-[11px] text-slate-600">v2.0.0 • Station Manager</div>
     </div>
   );
 }

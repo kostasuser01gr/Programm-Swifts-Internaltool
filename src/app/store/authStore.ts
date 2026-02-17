@@ -28,7 +28,13 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 
 // ─── Build profiles from chat users ─────────────────────────
 
-const DEFAULT_PIN = '1234';
+// Default PIN for initial demo profiles — auto-hashed on first login via verifyPin migration path
+const DEFAULT_PIN = '0000';
+
+function generateRandomPin(): string {
+  const digits = crypto.getRandomValues(new Uint8Array(4));
+  return Array.from(digits).map(d => d % 10).join('');
+}
 
 function buildProfile(user: ChatUser): UserProfile {
   return {
@@ -87,7 +93,7 @@ interface AuthState {
   updateProfile: (userId: string, updates: Partial<UserProfile>) => void;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
   changePin: (oldPin: string, newPin: string) => Promise<{ success: boolean; error?: string }>;
-  resetPin: (targetUserId: string) => Promise<void>;
+  resetPin: (targetUserId: string) => Promise<string>;
   suspendUser: (targetUserId: string, reason: string) => void;
   unsuspendUser: (targetUserId: string) => void;
 
@@ -376,9 +382,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       resetPin: async (targetUserId) => {
-        const hashedDefault = await hashPin(DEFAULT_PIN);
-        get().updateProfile(targetUserId, { pin: hashedDefault });
-        get().addAuditEntry('reset_pin', 'user', targetUserId, 'PIN reset to default', 'user');
+        const tempPin = generateRandomPin();
+        const hashedTemp = await hashPin(tempPin);
+        get().updateProfile(targetUserId, { pin: hashedTemp });
+        get().addAuditEntry('reset_pin', 'user', targetUserId, 'PIN reset to temporary value', 'user');
+        return tempPin;
       },
 
       suspendUser: (targetUserId, reason) => {
