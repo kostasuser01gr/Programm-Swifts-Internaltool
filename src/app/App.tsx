@@ -9,9 +9,8 @@ import { Base, Table, View, Record as TableRecord, Filter, Sort, Group, Automati
 import { useUndoRedo } from './hooks/useUndoRedo';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSearch } from './hooks/useSearch';
-import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
-import { SkeletonTable, Spinner } from './design-system';
+import { SkeletonTable } from './design-system';
 
 // ─── Lazy-loaded views (reduce main chunk by ~150KB) ─────────
 const GridView = lazy(() => import('./components/enterprise/GridView').then(m => ({ default: m.GridView })));
@@ -76,28 +75,6 @@ export default function App() {
 
   // Search
   const { results: searchResults, search: performSearch } = useSearch(tableData.records, tableData.fields);
-
-  // Dark mode
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('dataos-dark-mode') === 'true';
-    }
-    return false;
-  });
-
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode((prev) => {
-      const next = !prev;
-      document.documentElement.classList.toggle('dark', next);
-      localStorage.setItem('dataos-dark-mode', String(next));
-      return next;
-    });
-  }, []);
-
-  // Initialize dark mode on mount
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
-  }, []);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -379,7 +356,6 @@ export default function App() {
   const searchActions = useMemo(() => [
     { id: 'search', label: 'Search records...', description: 'Find records across all fields', icon: <SearchIcon className="w-4 h-4" />, category: 'General', shortcut: '⌘K', action: () => {} },
     { id: 'add-record', label: 'Add new record', description: 'Create a new record in the current table', icon: <SearchIcon className="w-4 h-4" />, category: 'Actions', action: handleAddRecord },
-    { id: 'toggle-dark', label: isDarkMode ? 'Switch to light mode' : 'Switch to dark mode', icon: <SearchIcon className="w-4 h-4" />, category: 'Settings', action: toggleDarkMode },
     { id: 'toggle-ai', label: 'Open AI Assistant', description: 'Get AI-powered help', icon: <SearchIcon className="w-4 h-4" />, category: 'Tools', action: () => setShowAIAssistant(true) },
     { id: 'show-analytics', label: 'Open Analytics Dashboard', description: 'View charts and stats', icon: <SearchIcon className="w-4 h-4" />, category: 'Tools', action: () => setShowAnalytics(true) },
     { id: 'show-automations', label: 'Manage Automations', description: 'Create and edit automations', icon: <SearchIcon className="w-4 h-4" />, category: 'Tools', action: () => setShowAutomations(true) },
@@ -388,21 +364,22 @@ export default function App() {
     ...currentTable!.views.map((v) => ({
       id: `view-${v.id}`, label: `Switch to ${v.name}`, description: `${v.type} view`, icon: <SearchIcon className="w-4 h-4" />, category: 'Views', action: () => handleViewChange(v),
     })),
-  ], [isDarkMode, currentTable, handleAddRecord, toggleDarkMode]);
+  ], [currentTable, handleAddRecord]);
 
   if (!currentTable) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Welcome to DataOS</h2>
-          <p className="text-gray-600 dark:text-gray-400">Select a base to get started</p>
+          <h2 className="text-2xl font-semibold text-foreground mb-2">Data Workspace</h2>
+          <p className="text-muted-foreground">Select a base to get started</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-1 overflow-hidden">
+      {/* Enterprise data sidebar (base/table/view navigation) */}
       <Sidebar
         workspace={workspace}
         currentBase={currentBase}
@@ -410,8 +387,6 @@ export default function App() {
         onBaseSelect={handleBaseSelect}
         onTableSelect={handleTableSelect}
         onAIAssistantToggle={() => setShowAIAssistant(!showAIAssistant)}
-        onDarkModeToggle={toggleDarkMode}
-        isDarkMode={isDarkMode}
         onNotificationsToggle={() => setShowNotifications(!showNotifications)}
         unreadNotifications={unreadCount}
         onAnalyticsToggle={() => setShowAnalytics(!showAnalytics)}
@@ -647,22 +622,6 @@ export default function App() {
         onClearSelection={() => setSelectedRecords([])}
       />
       </Suspense>
-
-      <Toaster />
-
-      {/* Floating Chat Button */}
-      <button
-        onClick={() => navigate('/chat')}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full border-none text-white text-2xl cursor-pointer flex items-center justify-center z-[9999] transition-transform duration-200 hover:scale-110"
-        style={{
-          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-          boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
-        }}
-        aria-label="Open Station Chat"
-        title="Station Chat"
-      >
-        💬
-      </button>
     </div>
   );
 }
