@@ -65,37 +65,19 @@ jobs:
         uses: actions/deploy-pages@v4
 
   # ── Build APK (Android) ─────────────────────────────
-  build-android:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        working-directory: shiftforge
-        run: flutter pub get
-
-      - name: Build APK
-        working-directory: shiftforge
-        run: |
-          flutter build apk \
-            --release
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: shiftforge-apk
-          path: shiftforge/build/app/outputs/flutter-apk/app-release.apk
+  # Disabled: no android/ directory in repo.
+  # To enable: run `flutter create --platforms=android .` in shiftforge/
+  # then commit the generated android/ directory.
+  # build-android:
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-java@v4
+  #       with: { distribution: 'temurin', java-version: '17' }
+  #     - uses: subosito/flutter-action@v2
+  #       with: { flutter-version: '3.24.0', channel: 'stable', cache: true }
+  #     - working-directory: shiftforge
+  #       run: flutter pub get
+  #     - working-directory: shiftforge
+  #       run: flutter build apk --release

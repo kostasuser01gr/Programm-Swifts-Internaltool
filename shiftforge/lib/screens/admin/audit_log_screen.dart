@@ -98,7 +98,7 @@ class _AuditLogScreenState extends ConsumerState<AuditLogScreen> {
     };
     return CircleAvatar(
       radius: 18,
-      backgroundColor: color.withValues(alpha: 0.15),
+      backgroundColor: color.withOpacity(0.15),
       child: Icon(icon, size: 18, color: color),
     );
   }

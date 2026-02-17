@@ -18,7 +18,7 @@ class ShiftForgeTheme {
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -88,7 +88,7 @@ class ShiftForgeTheme {
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

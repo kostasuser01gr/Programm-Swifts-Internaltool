@@ -266,7 +266,7 @@ class _EmployeeTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: team!.colorHex.toColor().withValues(alpha: 0.15),
+                color: team!.colorHex.toColor().withOpacity(0.15),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(team!.name,
