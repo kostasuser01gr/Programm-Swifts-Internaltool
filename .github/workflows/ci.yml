@@ -114,6 +114,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     # Note: Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
     # in GitHub repo Settings → Secrets and variables → Actions
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +132,7 @@ jobs:
           path: dist/
 
       - name: Deploy to Cloudflare Pages
+        if: env.CLOUDFLARE_API_TOKEN != ''
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

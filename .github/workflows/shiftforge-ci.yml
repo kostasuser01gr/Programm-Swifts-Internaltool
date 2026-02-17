@@ -48,10 +48,7 @@ jobs:
 
       - name: Build web
         working-directory: shiftforge
-        run: |
-          flutter build web \
-            --release \
-            --web-renderer canvaskit
+        run: flutter build web --release
 
       - name: Upload web build
         uses: actions/upload-pages-artifact@v3
