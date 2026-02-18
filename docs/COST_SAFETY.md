@@ -1,121 +1,135 @@
 # Cost Safety Guide
 
-> **Zero-cost commitment**: Every service used by DataOS is within its provider's free tier. There are no paid plans, no trials that auto-convert, and no credit-card-required services.
+> Every service in this stack runs on a **free tier**. This document lists what costs $0, what to avoid, and how to verify you are safe.
 
-## Services & Free Tier Limits
+---
 
-| Service | Usage | Free Tier Limit | Safety Mechanism |
-|---|---|---|---|
-| **Cloudflare Workers** | Backend API | 100K requests/day | Fail-closed guard blocks at 80K |
-| **Cloudflare D1** | Database (SQLite) | 5M reads + 100K writes/day | Usage counter in `fail-closed` middleware |
-| **Cloudflare KV** | Rate limiting & cache | 100K reads + 1K writes/day | Short TTL, bounded entries |
-| **Vercel Hobby** | Frontend SPA hosting | 100GB bandwidth/month | Static build (~1MB), well under limit |
-| **GitHub Actions** | CI/CD | 2,000 min/month | ~3 min per run, ~600 runs/month possible |
+## Services Used (All Free)
 
-## Safety Mechanisms
+| Service | Plan | Monthly cost | Key limits |
+|---------|------|:---:|------------|
+| **Vercel** | Hobby | $0 | 100 GB bandwidth, 100 deploys/day |
+| **Cloudflare Workers** | Free | $0 | 100K req/day, 10 ms CPU |
+| **Cloudflare D1** | Free | $0 | 5M reads + 100K writes/day |
+| **Cloudflare KV** | Free | $0 | 100K reads + 1K writes/day |
+| **GitHub Actions** | Free (public) | $0 | 2,000 min/month (private) |
 
-### 1. Fail-Closed Guard (`worker/src/middleware/failClosed.ts`)
+---
 
-Every request passes through the fail-closed middleware which:
-- Tracks daily request count, D1 reads, and D1 writes in a KV counter
-- Blocks requests with `429 Too Many Requests` when usage reaches **80%** of the free-tier limit
-- Resets counters daily (UTC midnight)
-- Returns a clear error message explaining why the request was blocked
+## Do NOT Enable
 
-```
-80% thresholds:
-- Workers requests: 80,000 / day
-- D1 reads: 4,000,000 / day
-- D1 writes: 80,000 / day
-```
+These features incur charges. None are required for this project.
 
-### 2. Rate Limiting (`worker/src/middleware/rateLimit.ts`)
+| Feature | Where | Why to avoid | Free alternative |
+|---------|-------|-------------|-----------------|
+| Vercel Pro / Team plan | Vercel billing | $20+/mo per member | Hobby plan is sufficient |
+| Vercel Analytics | Vercel dashboard | $0 only for 2,500 events/mo then paid | None needed — use browser DevTools |
+| Vercel Speed Insights | Vercel dashboard | Paid add-on | Lighthouse CLI (free) |
+| Vercel Web Application Firewall | Vercel dashboard | Enterprise feature | Cloudflare free WAF |
+| Vercel Cron Jobs | vercel.json `crons` | Paid on Hobby plan | GitHub Actions scheduled workflow |
+| Vercel Edge Config | Vercel dashboard | Paid storage | Environment variables |
+| Vercel Blob / KV / Postgres | Vercel dashboard | Paid storage services | Use Cloudflare D1 + KV (free) |
+| Cloudflare Durable Objects | wrangler.toml | $0.15/M requests beyond free | Not needed — use D1 |
+| Cloudflare R2 | CF dashboard | $0.015/GB/mo storage after 10 GB | Not needed |
+| Cloudflare Queues | CF dashboard | $0.40/M messages after 1M | Not needed |
+| Paid error tracking (Sentry Pro) | sentry.io | $26+/mo | Sentry free tier (5K events) |
+| AI API keys (OpenAI, etc.) | Code / env vars | Pay-per-token | Ollama local (free) |
 
-Per-IP rate limiting using KV with sliding windows:
-- General endpoints: 60 requests/minute
-- Auth endpoints: 10 requests/minute (prevents brute force)
-- Exceeding the limit returns `429` with `Retry-After` header
+---
 
-### 3. Input Validation (`worker/src/utils/validate.ts`)
+## How to Verify You Are Safe
 
-All request bodies are validated before processing:
-- Maximum payload size: 100KB (enforced by Workers runtime)
-- String length limits on all fields (email: 255, display_name: 100, etc.)
-- Type checking on all inputs
-- SQL injection prevention via D1 parameterized queries
+### Vercel
 
-### 4. Pagination
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard).
+2. Click your project > **Settings > General**.
+3. Confirm plan shows **Hobby (Free)**.
+4. Check **Settings > Analytics** — should be OFF.
+5. Check **Settings > Speed Insights** — should be OFF.
 
-All list endpoints use pagination:
-- Default: 50 records per page
-- Maximum: 100 records per page
-- Prevents accidental full-table scans
+### Cloudflare
 
-### 5. Session Management
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com).
+2. Click **Workers & Pages** > your worker.
+3. Check **Usage** — confirm you are on the **Free** plan.
+4. Go to **D1** > your database > **Metrics** — confirm reads/writes are within limits.
+5. Go to **KV** > your namespace — confirm usage.
 
-- Sessions expire after 24 hours
-- Maximum 5 active sessions per user
-- Session cleanup happens on login (old sessions purged)
+### GitHub Actions
+
+1. Go to **GitHub repo > Settings > Billing** (org level) or **Profile > Settings > Billing**.
+2. Confirm minutes usage is within the 2,000-minute free tier.
+
+---
+
+## Safety Mechanisms in the Codebase
+
+1. **Fail-closed rate limiting**: API returns `503` at 80% of daily request limit. No overage possible.
+2. **Request-level rate limiting**: Per-IP rate limits via KV prevent abuse.
+3. **Input validation**: Zod schemas on every endpoint reject malformed data before processing.
+4. **Pagination enforced**: Max 100 records per query. No unbounded scans.
+5. **Static frontend**: The SPA is pre-built HTML/CSS/JS served from CDN — zero compute cost.
+6. **CI efficiency**: GitHub Actions workflow uses `pnpm` cache and concurrency groups to minimize minutes.
+
+---
 
 ## What Happens When Limits Are Hit
 
-| Scenario | Behavior | User Impact |
-|---|---|---|
-| Workers requests at 80% | API returns `429` | UI shows "Service busy, try later" toast |
-| D1 reads at 80% | API returns `429` | Same as above |
-| KV writes at limit | Rate limiter degrades gracefully | Some requests may bypass rate limit (still safe) |
-| Vercel bandwidth high | Unlikely (~1MB bundle) | Would need 100K+ daily visitors |
-| **Never**: auto-upgrade | N/A | No paid plan exists in config |
+| Limit | Behavior | User experience |
+|-------|----------|-----------------|
+| Workers 100K req/day | API returns `503` | "Service temporarily unavailable" |
+| D1 5M reads/day | Queries fail | Cached data still served |
+| KV 100K reads/day | Rate-limit lookups fail-open | Slightly degraded rate limiting |
+| Vercel 100 GB/mo | Site goes offline | Unlikely at <50 users |
+| GH Actions 2,000 min/mo | CI stops running | Merge without CI (not recommended) |
 
-## Intentionally Disabled / Gated Features
+---
 
-These features are **not enabled** to stay within free limits:
+## Monitoring Without Cost
 
-| Feature | Reason | Status |
-|---|---|---|
-| File/image upload | Would need R2 (has free tier but adds complexity) | `TODO: Add with R2 free tier` |
-| Real-time WebSocket | Durable Objects required (paid) | Polling-based instead |
-| Email notifications | Requires email service | Not implemented |
-| Analytics/telemetry | Would need external service | Client-side only |
-| AI features | Would need API keys ($) | Mock/disabled, `TODO` flagged |
-| Full-text search | Would need search index | Client-side filtering only |
+### Cloudflare
+- **Workers > Metrics**: Request count, error rate, CPU time — all free.
+- **D1 > Metrics**: Reads/writes per day.
 
-## Monitoring Usage
+### Vercel
+- **Project > Analytics tab** (basic, free): Deployment count, build times.
+- **Function Logs** (Hobby): Basic invocation logs.
 
-Check current usage via the admin dashboard:
-```
-GET /api/admin/usage
-```
+### GitHub
+- **Actions > Usage**: Minutes consumed this billing cycle.
 
-Returns:
-```json
-{
-  "ok": true,
-  "data": {
-    "requests": { "current": 12500, "limit": 100000, "percent": 12.5 },
-    "d1_reads": { "current": 45000, "limit": 5000000, "percent": 0.9 },
-    "d1_writes": { "current": 1200, "limit": 100000, "percent": 1.2 }
-  }
+---
+
+## Feature Flags for Cost Control
+
+If you add optional paid features in the future, gate them behind environment variables:
+
+```typescript
+// Safe pattern: feature only active when explicitly enabled
+const ENABLE_ANALYTICS = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+
+if (ENABLE_ANALYTICS) {
+  // Only runs if explicitly opted in
+  initAnalytics();
 }
 ```
 
-## Adding New Features Safely
+Default: OFF. Only enable when you have confirmed the cost impact.
 
-Before adding any new feature, check:
+---
 
-1. **Does it require a new service?** → Must be free tier only
-2. **Does it increase D1 writes significantly?** → Add to usage tracking
-3. **Does it add a new external API call?** → Must be free or have generous free tier
-4. **Could it be exploited for abuse?** → Add rate limiting
-5. **Does it store user-generated content?** → Size limits, validation, no files
+## Cost Summary
 
-When in doubt, implement behind a feature flag that defaults to `OFF`:
-```typescript
-// worker/src/config.ts
-export const FEATURES = {
-  FILE_UPLOADS: false,     // Requires R2
-  REALTIME_SYNC: false,    // Requires Durable Objects
-  EMAIL_ALERTS: false,     // Requires email service
-  AI_SUGGESTIONS: false,   // Requires API keys
-} as const;
-```
+| Component | Monthly cost | Annual cost |
+|-----------|:---:|:---:|
+| Vercel Hobby | $0 | $0 |
+| Cloudflare Workers Free | $0 | $0 |
+| Cloudflare D1 Free | $0 | $0 |
+| Cloudflare KV Free | $0 | $0 |
+| GitHub Actions (public repo) | $0 | $0 |
+| Domain (optional) | ~$10 | ~$10 |
+| **Total** | **$0** | **$0 – $10** |
+
+---
+
+*See also: [DEPLOYMENT.md](DEPLOYMENT.md) for setup instructions.*

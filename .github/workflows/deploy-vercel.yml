@@ -1,0 +1,62 @@
+# ============================================================
+# Optional: Deploy to Vercel via GitHub Actions + Vercel CLI
+# ============================================================
+#
+# USE THIS ONLY IF you do NOT have Vercel for GitHub integration
+# enabled. If you connected the repo in the Vercel dashboard,
+# Vercel already deploys on push — this workflow is redundant.
+#
+# Required GitHub Secrets:
+#   VERCEL_TOKEN       — Personal Access Token from vercel.com/account/tokens
+#   VERCEL_ORG_ID      — From .vercel/project.json (run `vercel link` locally)
+#   VERCEL_PROJECT_ID  — From .vercel/project.json (run `vercel link` locally)
+# ============================================================
+
+name: Deploy to Vercel (optional)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vercel-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    # Only runs when all three secrets are configured
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build with Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy prebuilt output
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

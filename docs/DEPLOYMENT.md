@@ -1,344 +1,292 @@
-# DataOS — Deployment Guide
+# Deployment Guide
 
-> Zero-cost production deployment on Vercel (Hobby) + Cloudflare Workers (Free).
-
----
-
-## Architecture Overview
-
-```
-┌──────────────┐        HTTPS         ┌──────────────────────┐
-│   Browser    │ ◄──────────────────► │  Vercel (Frontend)   │
-│              │                      │  React SPA + CDN     │
-└──────────────┘                      └──────────────────────┘
-       │                                        │
-       │  API calls                             │
-       ▼                                        │
-┌──────────────────────┐                        │
-│ Cloudflare Workers   │ ◄──────────────────────┘
-│ (Hono REST API)      │        VITE_API_URL
-│ ┌──────┐ ┌────────┐  │
-│ │  D1  │ │   KV   │  │
-│ │(SQL) │ │(cache) │  │
-│ └──────┘ └────────┘  │
-└──────────────────────┘
-```
+> **Zero-cost production stack**: Vercel Hobby (free) + Cloudflare Workers Free.
+> No credit-card-required services. No surprise billing.
 
 ---
 
-## 1. Frontend → Vercel Hobby (Free)
+## Architecture
 
-### Via Dashboard
+```
+Browser  ──HTTPS──►  Vercel (Frontend)
+  │                  Vite SPA + CDN (dist/)
+  │
+  │  API calls
+  ▼
+Cloudflare Workers (Hono REST API)
+  ├── D1 (SQLite database)
+  └── KV (rate limiting & cache)
+```
 
-1. Push code to GitHub.
-2. Go to [vercel.com/new](https://vercel.com/new) → Import your GitHub repo.
-3. **Framework Preset**: Vite (auto-detected).
-4. **Build Command**: `pnpm build` (auto-detected).
-5. **Output Directory**: `dist` (auto-detected).
-6. **Environment Variables**:
+| Layer | Technology | Free-tier limit |
+|-------|-----------|-----------------|
+| Frontend | Vercel Hobby | 100 GB bandwidth/mo, unlimited deploys |
+| Backend | Cloudflare Workers | 100K req/day, 10 ms CPU |
+| Database | Cloudflare D1 | 5M reads + 100K writes/day |
+| Cache | Cloudflare KV | 100K reads + 1K writes/day |
+| CI | GitHub Actions | 2,000 min/month |
+
+---
+
+## 1. Frontend — Vercel (Recommended: Git Integration)
+
+This is the simplest approach — Vercel handles everything automatically.
+
+### Setup (one-time)
+
+1. Go to [vercel.com/new](https://vercel.com/new).
+2. Click **Import Git Repository** and select `kostasuser01gr/Programm-Swifts-Internaltool`.
+3. Vercel auto-detects:
+   - **Framework**: Vite
+   - **Build Command**: `pnpm build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `pnpm install --frozen-lockfile`
+4. Add environment variables:
+
    | Variable | Value | Required |
    |----------|-------|----------|
-   | `VITE_API_URL` | `https://dataos-api.<account>.workers.dev` | Yes (for API mode) |
-7. Click **Deploy**.
+   | `VITE_API_URL` | `https://internaltoolkit-api.<account>.workers.dev` | Yes |
 
-Your app will be live at `https://<project>.vercel.app`.
+5. Set **Production Branch** = `main`.
+6. Click **Deploy**.
 
-### Via CLI
+### What happens automatically
 
-```bash
-# Install Vercel CLI
-pnpm add -g vercel
+| Event | Vercel behavior |
+|-------|----------------|
+| Push to `main` | **Production deploy** at `https://<project>.vercel.app` |
+| Push to any other branch | **Preview deploy** with unique URL |
+| Open/update a PR | **Preview deploy** + status check on the PR |
 
-# Login
-vercel login
+No GitHub Actions workflow needed — Vercel Git integration handles it all.
 
-# Deploy (preview)
-vercel
+### SPA Deep-link Routing
 
-# Deploy (production)
-vercel --prod
-
-# Set env var
-vercel env add VITE_API_URL production
-# Enter: https://dataos-api.<account>.workers.dev
-```
-
-### SPA Routing
-
-The `public/_redirects` file handles SPA fallback:
-
-```
-/*    /index.html   200
-```
-
-Vercel also supports `vercel.json` rewrites if needed:
+The `vercel.json` at the repo root includes rewrites so React Router paths do not 404:
 
 ```json
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/((?!assets|icons|manifest.json|sw.js|_headers|_redirects).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
 ```
 
-### Free Tier Limits (Vercel Hobby)
-
-| Resource | Limit |
-|----------|-------|
-| Bandwidth | 100 GB/month |
-| Builds | 6,000 minutes/month |
-| Serverless Functions | 100 GB-hrs/month |
-| Custom Domains | Unlimited |
-| HTTPS | Auto (Let's Encrypt) |
-| Preview Deployments | Unlimited |
+Already committed. No action required.
 
 ---
 
-## 2. Backend → Cloudflare Workers (Free)
+## 2. Frontend — Vercel (Optional: GitHub Actions + Vercel CLI)
 
-### Initial Setup
+Use this **only if** you cannot or do not want the Vercel Git Integration.
+
+### Required GitHub Secrets
+
+| Secret | How to get it |
+|--------|--------------|
+| `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) |
+| `VERCEL_ORG_ID` | Run `vercel link` locally, then check `.vercel/project.json` |
+| `VERCEL_PROJECT_ID` | Same file as above |
+
+Add in **GitHub repo Settings > Secrets and variables > Actions**.
+
+### Workflow
+
+The file `.github/workflows/deploy-vercel.yml` runs on push to `main`:
+
+1. Installs deps with pnpm.
+2. Pulls Vercel env (`vercel pull`).
+3. Builds with Vercel CLI (`vercel build --prod`).
+4. Deploys prebuilt output (`vercel deploy --prebuilt --prod`).
+
+The workflow only runs when all three secrets are set. Otherwise it is a no-op.
+
+---
+
+## 3. Backend — Cloudflare Workers (Free)
+
+### Initial setup
 
 ```bash
-cd worker
+cd apps/api
 
-# Install Wrangler CLI (included in devDependencies)
-pnpm install
-
-# Login to Cloudflare
+# Authenticate
 npx wrangler login
-```
 
-### Create Resources
-
-```bash
-# Create D1 database
+# Create D1 database (if not already created)
 npx wrangler d1 create dataos-db
-# ➜ Copy the database_id into wrangler.toml
+# Copy database_id into apps/api/wrangler.toml
 
-# Create KV namespace (production)
+# Create KV namespace
 npx wrangler kv namespace create KV
-# ➜ Copy the namespace id into wrangler.toml
+# Copy namespace id into apps/api/wrangler.toml
 
-# Create KV namespace (preview/dev)
-npx wrangler kv namespace create KV --preview
-# ➜ Copy the preview_id into wrangler.toml
+# Run database migrations
+pnpm db:migrate:prod
+
+# Deploy
+pnpm deploy
 ```
 
-### Configure `wrangler.toml`
+The API is live at `https://internaltoolkit-api.<account>.workers.dev`.
 
-```toml
-name = "dataos-api"
-main = "src/index.ts"
-compatibility_date = "2024-01-01"
+### Automatic deploys via CI
 
-[vars]
-ENVIRONMENT = "production"
+The CI workflow (`.github/workflows/ci.yml`) deploys the worker on every push to `main`, but **only if** these secrets exist:
 
-[[d1_databases]]
-binding = "DB"
-database_name = "dataos-db"
-database_id = "<YOUR_DATABASE_ID>"
+| Secret | Purpose |
+|--------|---------|
+| `CLOUDFLARE_WORKERS_TOKEN` | Cloudflare API token (Workers scope) |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 
-[[kv_namespaces]]
-binding = "KV"
-id = "<YOUR_KV_NAMESPACE_ID>"
-preview_id = "<YOUR_KV_PREVIEW_ID>"
-```
+If missing, the deploy step is skipped silently.
 
-### Run Migrations & Seed
+### Fail-closed safety
 
-```bash
-# Local development
-pnpm db:migrate        # Apply schema to local D1
-pnpm db:seed           # Insert sample data
-
-# Production
-pnpm db:migrate:prod   # Apply schema to remote D1
-pnpm db:seed:prod      # Insert sample data
-```
-
-### Deploy
-
-```bash
-# Development (local)
-pnpm dev               # Starts wrangler dev server at localhost:8787
-
-# Production
-pnpm deploy            # Deploys to https://dataos-api.<account>.workers.dev
-```
-
-### Free Tier Limits (Workers Free)
-
-| Resource | Limit |
-|----------|-------|
-| Requests | 100,000/day |
-| CPU time | 10ms/invocation |
-| D1 reads | 5,000,000/day |
-| D1 writes | 100,000/day |
-| D1 storage | 5 GB |
-| KV reads | 100,000/day |
-| KV writes | 1,000/day |
-| KV storage | 1 GB |
-
-### Fail-Closed Safety
-
-The backend enforces **fail-closed** limits at **80%** of free-tier capacity:
-
-- At 80% of daily D1 reads/writes → API returns `503 Service Limit Reached`
-- Usage tracked via KV counters, exposed at `GET /api/admin/usage`
-- See `docs/COST_SAFETY.md` for the full safety checklist
+The API enforces limits at **80%** of free-tier capacity and returns `503 Service Limit Reached` — never overruns the free tier.
 
 ---
 
-## 3. Docker (Local / Self-hosted)
+## 4. Cloudflare Pages (Alternative Frontend)
 
-For local development or self-hosting without Vercel/Cloudflare:
+If you prefer Cloudflare Pages over Vercel:
 
-```bash
-# Build the frontend image
-docker build -t dataos .
+### Option A: Git Integration
 
-# Run
-docker run -p 8080:80 dataos
-# Open http://localhost:8080
+1. Cloudflare Dashboard > Workers and Pages > Create > Pages > Connect to Git.
+2. Select the GitHub repo.
+3. Settings: Build command `pnpm build`, output `dist`, root `/`.
+4. Add env variable: `VITE_API_URL` = your worker URL.
+
+### Option B: GitHub Actions
+
+```yaml
+# .github/workflows/deploy-cloudflare-pages.yml
+name: Deploy to Cloudflare Pages
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
+          directory: dist
 ```
 
-The `Dockerfile` uses multi-stage builds:
-1. **Stage 1**: Node 22 — `pnpm install && pnpm build`
-2. **Stage 2**: Nginx Alpine (~25 MB) — serves `dist/` with gzip + security headers
-
-Configuration: `docker/nginx.conf`
-
-### Docker Compose (Full Stack)
-
-```bash
-docker compose up -d
-```
-
-This starts:
-- Frontend (Nginx) on port 8080
-- Backend proxied from the Cloudflare Worker URL (set `VITE_API_URL`)
+Required secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PAGES_PROJECT_NAME`.
 
 ---
 
-## 4. CI/CD Pipeline
+## 5. CI Pipeline
 
-### GitHub Actions (`.github/workflows/ci.yml`)
+The GitHub Actions CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`:
 
-The pipeline runs automatically on push to `main` and on PRs:
+| Job | What | Blocks merge? |
+|-----|------|:---:|
+| **Lint** | ESLint on root SPA | Yes |
+| **Type Check** | tsc on root + apps/api + apps/web | Yes |
+| **Tests** | Vitest (103 tests) | Yes |
+| **Build** | `vite build` producing `dist/` + artifact upload | Yes |
+| **Deploy Worker** | Wrangler deploy (main only, if secrets set) | No |
 
-| Job | What it does |
-|-----|-------------|
-| `lint` | ESLint 9 (flat config) |
-| `typecheck` | `tsc --noEmit` |
-| `audit` | `pnpm audit --audit-level=moderate` |
-| `test` | Vitest (103 tests) |
-| `build` | `vite build` + artifact upload |
-| `deploy-frontend` | Cloudflare Pages deploy (main only) |
-| `deploy-worker` | Wrangler deploy (main only) |
+### Making CI a required check
 
-### Required Secrets
+1. **GitHub repo Settings > Branches > Branch protection rules** > Add rule for `main`.
+2. Enable **Require status checks to pass before merging**.
+3. Select: `Lint`, `Type Check`, `Tests`, `Build`.
+4. Enable **Require branches to be up to date before merging**.
 
-| Secret | Where | Purpose |
-|--------|-------|---------|
-| `CLOUDFLARE_API_TOKEN` | GitHub repo secrets | Workers + Pages deploy |
-| `CLOUDFLARE_ACCOUNT_ID` | GitHub repo secrets | Cloudflare account |
-| `VERCEL_TOKEN` | GitHub repo secrets | (Optional) Vercel CLI deploy |
+Quick CLI:
 
-### CodeQL Security Scanning
-
-Runs via `.github/workflows/codeql.yml`:
-- **Trigger**: PRs to `main` + weekly (Monday 03:00 UTC)
-- **Languages**: JavaScript/TypeScript, Python
-- **Copilot Autofix**: Auto-suggests patches for alerts
+```bash
+gh api -X PUT -H "Accept: application/vnd.github+json" \
+  /repos/kostasuser01gr/Programm-Swifts-Internaltool/branches/main/protection \
+  -f required_status_checks[strict]=true \
+  -f 'required_status_checks[contexts][]=Lint' \
+  -f 'required_status_checks[contexts][]=Type Check' \
+  -f 'required_status_checks[contexts][]=Tests' \
+  -f 'required_status_checks[contexts][]=Build' \
+  -f enforce_admins=true \
+  -f restrictions=
+```
 
 ---
 
-## 5. Environment Variables
+## 6. Environment Variables
 
 ### Frontend (Vite)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_API_URL` | — | Worker API base URL. If unset, app runs in demo/mock mode. |
+| `VITE_API_URL` | `""` | Worker API base URL. Unset = demo/mock mode. |
 
-### Backend (Wrangler)
+### Backend (wrangler.toml vars)
 
-| Binding | Type | Description |
-|---------|------|-------------|
-| `DB` | D1 | SQLite database |
-| `KV` | KV | Rate limiting + cache |
-| `ENVIRONMENT` | Var | `production` or `development` |
-
----
-
-## 6. Custom Domain (Optional)
-
-### Vercel
-
-```bash
-vercel domains add yourdomain.com
-# Add CNAME: yourdomain.com → cname.vercel-dns.com
-```
-
-### Cloudflare Workers
-
-```bash
-# In Cloudflare Dashboard:
-# Workers & Pages → dataos-api → Settings → Triggers → Custom Domains
-# Add: api.yourdomain.com
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENVIRONMENT` | `production` | Runtime environment |
+| `ALLOWED_ORIGINS` | `https://dataos.vercel.app` | CORS allowed origins |
+| `MAX_USERS` | `50` | Max registered users |
+| `MAX_RECORDS_PER_TABLE` | `10000` | Record cap per table |
 
 ---
 
-## 7. Monitoring
+## 7. Secrets Summary
 
-### Cloudflare Analytics (Free)
+**Never commit these. Use provider dashboards or GitHub Secrets only.**
 
-- **Workers Analytics**: Request count, CPU time, errors — built-in.
-- **D1 Analytics**: Read/write counts, storage — built-in.
-
-### Application-Level
-
-- `GET /api/admin/usage` — Returns daily D1/KV usage vs. limits
-- `GET /api/admin/stats` — System statistics (users, records, workspaces)
-- Sentry integration available via Sentry Copilot extension (see README)
-
----
-
-## 8. Rollback
-
-### Vercel
-
-```bash
-# List deployments
-vercel ls
-
-# Promote a previous deployment to production
-vercel promote <deployment-url>
-```
-
-### Cloudflare Workers
-
-```bash
-# Rollback to previous version
-npx wrangler rollback
-
-# Or deploy a specific commit
-git checkout <commit-sha>
-cd worker && pnpm deploy
-```
+| Secret | Where | Used by |
+|--------|-------|---------|
+| `CLOUDFLARE_WORKERS_TOKEN` | GitHub Secrets | CI deploy worker |
+| `CLOUDFLARE_ACCOUNT_ID` | GitHub Secrets | CI deploy worker |
+| `VERCEL_TOKEN` | GitHub Secrets | Optional Vercel CLI deploy |
+| `VERCEL_ORG_ID` | GitHub Secrets | Optional Vercel CLI deploy |
+| `VERCEL_PROJECT_ID` | GitHub Secrets | Optional Vercel CLI deploy |
+| `VITE_API_URL` | Vercel Project Settings | Build-time env var |
 
 ---
 
-## 9. Troubleshooting
+## 8. Docker (Local / Self-hosted)
+
+```bash
+docker build -t dataos .
+docker run -p 8080:80 dataos
+```
+
+Multi-stage: Node 22 build then Nginx Alpine (~25 MB). Config: `docker/nginx.conf`.
+
+---
+
+## 9. Rollback
+
+**Vercel**: Dashboard > Deployments > select previous > Promote to Production.
+**Worker**: `cd apps/api && npx wrangler rollback`
+
+---
+
+## 10. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| App loads but shows PIN login | `VITE_API_URL` not set | Set env var and redeploy |
-| `503 Service Limit Reached` | D1/KV daily limit hit | Wait for reset (midnight UTC) or upgrade |
-| CORS errors | Worker URL mismatch | Check `VITE_API_URL` matches actual Worker URL |
-| Build fails on Vercel | Node version | Ensure `engines.node` is `>=18` in package.json |
-| Worker deploy fails | Auth | Run `npx wrangler login` and verify API token scopes |
+| SPA routes 404 | Rewrites missing | Already in `vercel.json` — redeploy |
+| `503 Service Limit Reached` | Daily free-tier limit hit | Wait for UTC midnight |
+| CORS errors | `ALLOWED_ORIGINS` mismatch | Update `apps/api/wrangler.toml` |
+| Worker deploy skipped | Secrets not set | Add CF secrets to GitHub |
 
 ---
 
-*See also: [COST_SAFETY.md](COST_SAFETY.md) for free-tier guardrails, [ARCHITECTURE.md](../ARCHITECTURE.md) for system design.*
+*See also: [COST_SAFETY.md](COST_SAFETY.md) and [SECURITY.md](../SECURITY.md)*
