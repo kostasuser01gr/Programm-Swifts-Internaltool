@@ -111,18 +111,18 @@ The workflow only runs when all three secrets are set. Otherwise it is a no-op.
 ### Initial setup
 
 ```bash
-cd apps/api
+cd worker
 
 # Authenticate
 npx wrangler login
 
 # Create D1 database (if not already created)
 npx wrangler d1 create dataos-db
-# Copy database_id into apps/api/wrangler.toml
+# Copy database_id into worker/wrangler.toml
 
 # Create KV namespace
 npx wrangler kv namespace create KV
-# Copy namespace id into apps/api/wrangler.toml
+# Copy namespace id into worker/wrangler.toml
 
 # Run database migrations
 pnpm db:migrate:prod
@@ -198,7 +198,7 @@ The GitHub Actions CI (`.github/workflows/ci.yml`) runs on every PR and push to 
 | Job | What | Blocks merge? |
 |-----|------|:---:|
 | **Lint** | ESLint on root SPA | Yes |
-| **Type Check** | tsc on root + apps/api + apps/web | Yes |
+| **Type Check** | tsc on root + worker + apps/web | Yes |
 | **Tests** | Vitest (103 tests) | Yes |
 | **Build** | `vite build` producing `dist/` + artifact upload | Yes |
 | **Deploy Worker** | Wrangler deploy (main only, if secrets set) | No |
@@ -274,7 +274,7 @@ Multi-stage: Node 22 build then Nginx Alpine (~25 MB). Config: `docker/nginx.con
 ## 9. Rollback
 
 **Vercel**: Dashboard > Deployments > select previous > Promote to Production.
-**Worker**: `cd apps/api && npx wrangler rollback`
+**Worker**: `cd worker && npx wrangler rollback`
 
 ---
 
@@ -284,7 +284,7 @@ Multi-stage: Node 22 build then Nginx Alpine (~25 MB). Config: `docker/nginx.con
 |---------|-------|-----|
 | SPA routes 404 | Rewrites missing | Already in `vercel.json` — redeploy |
 | `503 Service Limit Reached` | Daily free-tier limit hit | Wait for UTC midnight |
-| CORS errors | `ALLOWED_ORIGINS` mismatch | Update `apps/api/wrangler.toml` |
+| CORS errors | `ALLOWED_ORIGINS` mismatch | Update `worker/wrangler.toml` |
 | Worker deploy skipped | Secrets not set | Add CF secrets to GitHub |
 
 ---

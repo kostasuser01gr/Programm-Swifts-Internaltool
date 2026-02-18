@@ -7,7 +7,7 @@ import { useLocation, useNavigate } from 'react-router';
 import {
   LayoutDashboard, MessageSquare, Car, Droplets, Gamepad2, Database, ShieldCheck,
   Settings, ChevronLeft, ChevronRight, Search, Bell, Command,
-  LogOut, Moon, Sun, Monitor, User, PanelRightClose,
+  LogOut, Moon, Sun, Monitor, User, PanelRightClose, HelpCircle,
 } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -45,6 +45,7 @@ function useNavItems(): NavItem[] {
     { id: 'game', path: '/game', label: 'Training', icon: Gamepad2 },
     { id: 'admin', path: '/admin', label: 'Admin', icon: ShieldCheck },
     { id: 'settings', path: '/settings', label: 'Settings', icon: Settings },
+    { id: 'help', path: '/help', label: 'Help', icon: HelpCircle },
   ];
 }
 

@@ -5,6 +5,7 @@ import type { Env, AuthContext } from './types';
 import { authMiddleware } from './middleware/auth';
 import { rateLimiter, authRateLimiter } from './middleware/rateLimit';
 import { failClosedGuard } from './middleware/failClosed';
+import { logger } from './utils/logger';
 import authRoutes from './routes/auth';
 import workspaceRoutes from './routes/workspaces';
 import tableRoutes from './routes/tables';
@@ -73,11 +74,18 @@ app.notFound((c) => {
 
 // ─── Error Handler ──────────────────────────────────────────
 app.onError((err, c) => {
-  console.error('[API Error]', err.message, err.stack);
+  logger.error('Unhandled API error', {
+    message: err.message,
+    stack: err.stack,
+    path: c.req.path,
+    method: c.req.method,
+  });
   return c.json(
     {
-      ok: false,
-      error: c.env.ENVIRONMENT === 'production' ? 'Internal server error' : err.message,
+      type: 'https://dataos.app/problems/internal-server-error',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: c.env.ENVIRONMENT === 'production' ? 'An unexpected error occurred' : err.message,
     },
     500
   );

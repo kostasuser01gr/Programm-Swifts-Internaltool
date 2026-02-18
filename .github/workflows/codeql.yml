@@ -25,8 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript-typescript']
-        # Add 'python' if Python source is introduced
+        language: ['javascript-typescript', 'python']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -20,7 +20,7 @@ This repository uses **GitHub Code Scanning** powered by **CodeQL** on every pul
 
 ### Scope
 
-- **Languages**: JavaScript / TypeScript (primary), Dart (ShiftForge sub-project).
+- **Languages**: JavaScript / TypeScript (primary), Python (included in scan matrix), Dart (ShiftForge sub-project — not scanned by CodeQL).
 - **Folders**: All source under `src/`, `worker/src/`, and `shiftforge/lib/`.
 - **Queries**: `security-extended` suite (covers OWASP Top 10 and more).
 

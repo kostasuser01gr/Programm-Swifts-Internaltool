@@ -10,7 +10,12 @@ import { ThemeProvider } from "./app/theme/ThemeProvider.tsx";
 import { Toaster } from "./app/components/ui/sonner.tsx";
 import { CommandPalette } from "./app/components/shell/CommandPalette.tsx";
 import { useAuthBridge } from "./app/hooks/useAuthBridge.ts";
+import { QueryProvider } from "./app/api/queryProvider.tsx";
+import { validateEnv } from "./app/utils/featureFlags.ts";
 import "./styles/index.css";
+
+// ── Validate env vars at startup ──────────────────────────
+validateEnv();
 
 // ── Lazy-loaded pages ─────────────────────────────────────
 const DashboardPage = lazy(() => import("./app/components/shell/DashboardPage.tsx"));
@@ -22,6 +27,7 @@ const WashPortal = lazy(() => import("./app/components/washer/WashPortal.tsx"));
 const SettingsPanel = lazy(() => import("./app/components/settings/SettingsPanel.tsx"));
 const GamePage = lazy(() => import("./app/components/game/GamePage.tsx"));
 const AdminPage = lazy(() => import("./app/components/shell/AdminPage.tsx"));
+const HelpPage = lazy(() => import("./app/components/shell/HelpPage.tsx"));
 const OnboardingPage = lazy(() => import("./app/components/shared/OnboardingPage.tsx"));
 
 // ── Error pages ───────────────────────────────────────────
@@ -87,6 +93,7 @@ function AppRoutes() {
             <Route path="/settings" element={<SettingsPanel />} />
             <Route path="/game" element={<GamePage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/help" element={<HelpPage />} />
             <Route path="/data" element={<DataApp />} />
             <Route path="/base/:baseId" element={<DataApp />} />
             <Route path="/base/:baseId/table/:tableId" element={<DataApp />} />
@@ -110,15 +117,17 @@ function AppRoutes() {
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <BrowserRouter>
-      <I18nProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <ConnectivityMonitor>
-              <AppRoutes />
-            </ConnectivityMonitor>
-          </ToastProvider>
-        </ThemeProvider>
-      </I18nProvider>
+      <QueryProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <ConnectivityMonitor>
+                <AppRoutes />
+              </ConnectivityMonitor>
+            </ToastProvider>
+          </ThemeProvider>
+        </I18nProvider>
+      </QueryProvider>
     </BrowserRouter>
   </ErrorBoundary>
 );
