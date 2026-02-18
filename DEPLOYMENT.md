@@ -2,26 +2,36 @@
 
 > **Zero-cost deployment**: Frontend on Vercel Hobby (free) + Backend on Cloudflare Workers Free.
 
+> **Monorepo layout**: `apps/web` (Next.js) · `apps/api` (Cloudflare Worker) · `packages/shared` (Zod schemas)
+
 ---
 
 ## Prerequisites
 
-- **Node.js 22+** and **pnpm**
+- **Node.js 22+** and **pnpm** (v9+)
 - GitHub account with Actions enabled
 - Cloudflare account (free tier)
 - Vercel account (hobby tier, free)
 
 ---
 
-## 1. Backend — Cloudflare Workers
+## 0. Monorepo Setup
+
+```bash
+# Install all workspace dependencies from the repo root
+pnpm install
+```
+
+This links `apps/web`, `apps/api`, and `packages/shared` automatically.
+
+---
+
+## 1. Backend — Cloudflare Workers (`apps/api`)
 
 ### One-time setup
 
 ```bash
-cd worker
-
-# Install dependencies
-pnpm install
+cd apps/api
 
 # Authenticate with Cloudflare
 npx wrangler login
@@ -29,12 +39,12 @@ npx wrangler login
 # Create the D1 database
 npx wrangler d1 create dataos-db
 # Output: database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-# → Update worker/wrangler.toml: database_id = "<paste here>"
+# → Update apps/api/wrangler.toml: database_id = "<paste here>"
 
 # Create the KV namespace
 npx wrangler kv namespace create KV
 # Output: id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-# → Update worker/wrangler.toml: id = "<paste here>"
+# → Update apps/api/wrangler.toml: id = "<paste here>"
 
 # Run DB migrations
 pnpm db:migrate:prod
@@ -46,12 +56,12 @@ pnpm db:seed:prod
 pnpm deploy
 ```
 
-The API is now live at `https://dataos-api.<account>.workers.dev`.
+The API is now live at `https://internaltoolkit-api.<account>.workers.dev`.
 
 ### Updating
 
 ```bash
-cd worker
+cd apps/api
 pnpm deploy
 ```
 
@@ -67,14 +77,16 @@ pnpm db:migrate:prod
 ### Option A: Vercel Dashboard
 
 1. Import repo at [vercel.com/new](https://vercel.com/new)
-2. Framework: **Vite** (auto-detected from `vercel.json`)
-3. Add environment variable:
-   - `VITE_API_URL` = `https://dataos-api.<account>.workers.dev`
-4. Deploy
+2. Set **Root Directory** to `apps/web`
+3. Framework: **Next.js** (auto-detected)
+4. Add environment variable:
+   - `NEXT_PUBLIC_API_URL` = `https://internaltoolkit-api.<account>.workers.dev`
+5. Deploy
 
 ### Option B: CLI
 
 ```bash
+cd apps/web
 npx vercel --prod
 ```
 
@@ -92,13 +104,13 @@ The CI pipeline deploys on every push to `main`. Set these GitHub Secrets:
 
 ## 3. Environment Variables
 
-### Frontend (Vite)
+### Frontend (Next.js — `apps/web`)
 
-| Variable       | Description           | Default |
-|----------------|-----------------------|---------|
-| `VITE_API_URL` | Worker API base URL   | `""`    |
+| Variable               | Description         | Default |
+|------------------------|---------------------|---------|
+| `NEXT_PUBLIC_API_URL`  | Worker API base URL | `""`    |
 
-### Worker (`wrangler.toml` vars)
+### Worker (`apps/api/wrangler.toml` vars)
 
 | Variable        | Description                 | Default                     |
 |-----------------|-----------------------------|-----------------------------|
@@ -128,11 +140,11 @@ The Worker automatically returns **503 Service Limit Reached** when approaching 
 
 ## 5. CORS Configuration
 
-Update `CORS_ORIGIN` in `worker/wrangler.toml` to match your frontend domain:
+Update `ALLOWED_ORIGINS` in `apps/api/wrangler.toml` to match your frontend domain:
 
 ```toml
 [vars]
-CORS_ORIGIN = "https://your-app.vercel.app"
+ALLOWED_ORIGINS = "https://your-app.vercel.app"
 ```
 
 For local development, the Worker dev server accepts all origins by default.

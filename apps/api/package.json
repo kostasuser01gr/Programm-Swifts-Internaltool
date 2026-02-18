@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create dataos-db",
+    "db:migrate": "wrangler d1 migrations apply dataos-db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply dataos-db --remote",
+    "db:seed": "wrangler d1 execute dataos-db --local --file=src/db/seed.sql",
+    "db:seed:prod": "wrangler d1 execute dataos-db --remote --file=src/db/seed.sql",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/shared": "workspace:*",
+    "hono": "^4.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.65.0"
+  }
+}

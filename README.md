@@ -197,17 +197,20 @@ README.md                  # This file
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd dataos
+git clone https://github.com/kostasuser01gr/Programm-Swifts-Internaltool.git
+cd Programm-Swifts-Internaltool
 
-# Install dependencies
-npm install
+# Install all workspace dependencies (monorepo)
+pnpm install
 
-# Start development server
-npm run dev
+# Start the web app (Next.js)
+cd apps/web && pnpm dev
+
+# In another terminal — start the API (Cloudflare Worker)
+cd apps/api && pnpm dev
 ```
 
-The application will be available at `http://localhost:5173`
+The web app will be available at `http://localhost:3000` and the API at `http://localhost:8787`.
 
 ### Quick Tour
 
@@ -494,7 +497,7 @@ All interactive components follow WAI-ARIA best practices:
 
 This is an enterprise demonstration project showcasing modern architecture patterns. For production use, consider:
 
-1. **Backend Implementation**: Cloudflare Workers + D1 (SQLite) backend included in `worker/`
+1. **Backend Implementation**: Cloudflare Workers + D1 (SQLite) backend in `apps/api/`
 2. **Authentication**: PBKDF2-SHA256 session-based auth with role management
 3. **Real-time**: Implement WebSocket with Y.js CRDT
 4. **Testing**: Add unit, integration, and E2E tests
@@ -504,7 +507,7 @@ This is an enterprise demonstration project showcasing modern architecture patte
 
 ## ☁️ Backend (Cloudflare Workers)
 
-The `worker/` directory contains a full REST API backend powered by **Hono** (web framework), **Cloudflare D1** (SQLite), and **KV** (rate limiting & cache). All services run on the Cloudflare Workers Free plan — **€0 always**.
+The `apps/api/` directory contains a full REST API backend powered by **Hono** (web framework), **Cloudflare D1** (SQLite), and **KV** (rate limiting & cache). All services run on the Cloudflare Workers Free plan — **€0 always**.
 
 ### Architecture
 
@@ -550,7 +553,7 @@ GET    /api/admin/stats         — System statistics (admin)
 ### Worker Setup
 
 ```bash
-cd worker
+cd apps/api
 
 # Install dependencies
 pnpm install
@@ -586,20 +589,22 @@ pnpm deploy
 
 1. Push to GitHub
 2. Import in [vercel.com/new](https://vercel.com/new) → Select this repo
-3. Framework: **Vite** (auto-detected)
-4. Environment variable: `VITE_API_URL` = your Worker URL (e.g., `https://dataos-api.<account>.workers.dev`)
-5. Deploy — live at `https://dataos.vercel.app`
+3. Set **Root Directory** to `apps/web`
+4. Framework: **Next.js** (auto-detected)
+5. Environment variable: `NEXT_PUBLIC_API_URL` = your Worker URL (e.g., `https://internaltoolkit-api.<account>.workers.dev`)
+6. Deploy — live at your Vercel domain
 
 Or via CLI:
 
 ```bash
+cd apps/web
 npx vercel --prod
 ```
 
 ### Backend → Cloudflare Workers (Free)
 
 ```bash
-cd worker
+cd apps/api
 npx wrangler d1 create dataos-db
 # Update wrangler.toml with database_id
 npx wrangler kv namespace create KV
@@ -610,7 +615,7 @@ pnpm db:seed:prod
 pnpm deploy
 ```
 
-The API will be live at `https://dataos-api.<account>.workers.dev`.
+The API will be live at `https://internaltoolkit-api.<account>.workers.dev`.
 
 ### CI/CD (GitHub Actions)
 

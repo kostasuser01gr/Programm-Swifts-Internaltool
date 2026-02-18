@@ -1,0 +1,36 @@
+name = "internaltoolkit-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── D1 Database (Free tier: 5GB storage, 5M rows read/day, 100K rows written/day) ──
+[[d1_databases]]
+binding = "DB"
+database_name = "dataos-db"
+database_id = "f9d71785-baac-4490-95d6-52eeb27d77a6"
+migrations_dir = "src/db/migrations"
+
+# ── KV Namespace (Free tier: 100K reads/day, 1K writes/day) ──
+[[kv_namespaces]]
+binding = "KV"
+id = "5f87b7e031ad4b25b0014ecc79b26873"
+
+# ── Environment Variables ──
+[vars]
+ENVIRONMENT = "production"
+VERSION = "1.0.0"
+ALLOWED_ORIGINS = "https://dataos.vercel.app"
+CORS_ORIGIN = "https://dataos.vercel.app"
+MAX_UPLOAD_SIZE_BYTES = "5242880"  # 5MB
+RATE_LIMIT_REQUESTS_PER_MINUTE = "60"
+RATE_LIMIT_AUTH_PER_MINUTE = "10"
+SESSION_TTL_SECONDS = "86400"  # 24h
+MAX_USERS = "50"
+MAX_RECORDS_PER_TABLE = "10000"
+MAX_TABLES_PER_BASE = "20"
+FAIL_CLOSED_D1_DAILY_READS = "4000000"   # 80% of 5M free limit
+FAIL_CLOSED_D1_DAILY_WRITES = "80000"    # 80% of 100K free limit
+FAIL_CLOSED_KV_DAILY_READS = "80000"     # 80% of 100K free limit
+
+[dev]
+port = 8787
