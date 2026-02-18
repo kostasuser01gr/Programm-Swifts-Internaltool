@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import type { Env, AuthContext } from '../types';
 import { generateId } from '../utils/crypto';
 import { validateCreateWorkspace } from '../utils/validate';
-import { trackUsage } from '../middleware/failClosed';
 
 type AppEnv = { Bindings: Env; Variables: { auth: AuthContext } };
 
@@ -12,8 +11,6 @@ const workspaces = new Hono<AppEnv>();
 workspaces.get('/', async (c) => {
   const auth = c.get('auth');
   const env = c.env;
-
-  await trackUsage(env, 'd1_reads', 1);
 
   const { results } = await env.DB.prepare(
     `SELECT w.* FROM workspaces w
@@ -53,8 +50,6 @@ workspaces.post('/', async (c) => {
     ).bind(generateId('aud'), auth.user.id, id, c.req.header('CF-Connecting-IP') || ''),
   ]);
 
-  await trackUsage(env, 'd1_writes', 3);
-
   return c.json(
     { ok: true, data: { id, name, description, icon: icon || '📊', color: color || '#3b82f6' } },
     201
@@ -66,8 +61,6 @@ workspaces.get('/:id', async (c) => {
   const auth = c.get('auth');
   const env = c.env;
   const wsId = c.req.param('id');
-
-  await trackUsage(env, 'd1_reads', 2);
 
   // Check membership
   const member = await env.DB.prepare(
@@ -116,8 +109,6 @@ workspaces.delete('/:id', async (c) => {
   )
     .bind(generateId('aud'), auth.user.id, wsId, c.req.header('CF-Connecting-IP') || '')
     .run();
-
-  await trackUsage(env, 'd1_writes', 2);
 
   return c.json({ ok: true });
 });

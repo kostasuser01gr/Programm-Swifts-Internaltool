@@ -1,0 +1,30 @@
+{
+  "name": "@dataos/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 execute dataos-db --local --file=src/db/migrations/0001_initial.sql",
+    "db:migrate:prod": "wrangler d1 execute dataos-db --remote --file=src/db/migrations/0001_initial.sql",
+    "db:seed:local": "wrangler d1 execute dataos-db --local --file=src/db/seed.sql"
+  },
+  "dependencies": {
+    "@dataos/shared": "workspace:*",
+    "hono": "^4.6.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0",
+    "wrangler": "^3.99.0"
+  }
+}

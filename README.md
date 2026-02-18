@@ -91,84 +91,62 @@
 │  Sidebar │ ViewToolbar │ GridView │ KanbanView  │
 │  CalendarView │ RecordDetail │ AIAssistant      │
 └─────────────────────────────────────────────────┘
-                       ↕  REST / fetch
+                       ↕ REST (fetch + cookies)
 ┌─────────────────────────────────────────────────┐
-│       BACKEND (Cloudflare Workers + Hono)        │
+│       WORKER API (Hono on Cloudflare Workers)    │
 ├─────────────────────────────────────────────────┤
-│  Auth │ Rate Limit │ Fail-Closed │ RBAC         │
-│  D1 (SQLite) │ KV (Cache) │ Audit Log           │
-└─────────────────────────────────────────────────┘
-```
-┌─────────────────────────────────────────────────┐
-│            DATA LAYER (Future)                   │
-├─────────────────────────────────────────────────┤
-│  GraphQL API │ WebSocket │ PostgreSQL │ Redis   │
+│  Auth │ Workspaces │ Tables │ Admin              │
+│  D1 (SQLite) │ KV (rate limit / cache)           │
 └─────────────────────────────────────────────────┘
 ```
 
 ### Technology Stack
 
-**Frontend:**
+**Frontend (root `src/`):**
 
 - React 18.3+ with Hooks
 - TypeScript 5.0+ (Strict Mode)
-- Vite 6 (build tooling, dev server)
-- Tailwind CSS v4 (oklch design tokens, glassmorphism)
-- TanStack Query (server state, caching, pagination)
-- Zustand (UI state, persistence)
-- React Hook Form + Zod (forms + validation)
-- Radix UI + shadcn/ui (accessible primitives)
-- Framer Motion / motion (micro-interactions)
-- Lucide Icons + Sonner (toasts)
+- Vite 6 (build & dev server)
+- Tailwind CSS v4
+- Zustand 5 (state management)
+- Radix UI / shadcn/ui Components
+- Lucide Icons
+- Sonner (Toast Notifications)
 
-**Backend (Cloudflare Workers):**
+**Backend (`worker/`):**
 
-- Hono v4 (web framework)
-- Cloudflare D1 (SQLite database)
-- Cloudflare KV (cache & rate limits)
-- PBKDF2-SHA256 (auth, sessions)
-- ProblemDetails (RFC 9457 error responses)
-- Fail-closed guards (free-tier billing protection)
+- Hono v4 (HTTP framework for edge)
+- Cloudflare Workers runtime
+- D1 (SQLite-compatible database)
+- KV (key-value store for rate limiting)
+- PBKDF2-SHA256 (password hashing)
+- HttpOnly session cookies
 
 ---
 
 ## 📁 Project Structure
 
 ```text
-/
-├── src/                    # Main Vite/React SPA
-│   ├── app/
-│   │   ├── api/            # API client + TanStack Query hooks
-│   │   ├── components/
-│   │   │   ├── shell/      # AppShell, Sidebar, Topbar, Dashboard, Admin, Help
-│   │   │   ├── shared/     # ErrorBoundary, ToastProvider, NavBar, SplitView
-│   │   │   ├── ui/         # shadcn/ui primitives (Button, Dialog, Card, etc.)
-│   │   │   ├── auth/       # Login, PinLogin, AuthGate
-│   │   │   ├── chat/       # Team chat (channels, threads, reactions)
-│   │   │   ├── enterprise/ # Grid, Kanban, Calendar, Gallery, Timeline, Form views
-│   │   │   ├── fleet/      # Vehicle fleet management
-│   │   │   ├── game/       # Training games (trivia + strategy)
-│   │   │   ├── settings/   # Settings panel
-│   │   │   └── washer/     # Wash operations
-│   │   ├── design-system/  # Tokens, skeleton, status badge components
-│   │   ├── hooks/          # useEnterpriseData, useSearch, useVirtualList, etc.
-│   │   ├── store/          # Zustand stores (auth, chat, fleet, washer, game)
-│   │   ├── theme/          # ThemeProvider (dark/light/system)
-│   │   ├── types/          # TypeScript type definitions
-│   │   ├── utils/          # Feature flags, schemas, helpers
-│   │   └── i18n/           # Internationalization (en/el)
-│   ├── styles/             # CSS: theme.css, tokens.css, tailwind.css
-│   └── test/               # Vitest unit tests (103 tests)
-├── worker/                 # Cloudflare Worker API (Hono + D1 + KV)
-│   └── src/
-│       ├── routes/         # auth, workspaces, tables, admin
-│       ├── middleware/     # auth, rateLimit, failClosed
-│       ├── utils/          # crypto, validate, problems, logger
-│       └── db/             # migrations, seed.sql
-├── e2e/                    # Playwright E2E smoke tests
-├── .github/workflows/      # CI, CodeQL, Deploy (Vercel + Worker)
-├── org/                    # Org-wide templates (reusable workflows, checklist)
-└── public/                 # Static assets, manifest.json, service worker
+/src                       # Vite SPA (React)
+  /app
+    /api/                  # fetch client + auth hooks
+    /components/           # feature components
+    /store/                # Zustand stores
+    /types/                # TypeScript definitions
+    App.tsx                # Root component
+  /pwa/
+    registerSW.ts          # Service Worker registration
+  /styles/                 # Global styles + tokens
+/worker                    # Cloudflare Worker API (Hono)
+  /src
+    index.ts               # Entrypoint (routes, middleware, CORS)
+    /routes/               # auth, workspaces, tables, admin
+    /middleware/            # auth, rateLimit, failClosed
+    /utils/                # crypto, validate, authz (RBAC)
+    /db/                   # migrations + seed
+index.html                 # SPA entry point
+vercel.json                # Vercel config (headers, CSP, rewrites)
+ARCHITECTURE.md            # Detailed technical docs
 ```
 
 ---
@@ -209,52 +187,26 @@
 
 ### Prerequisites
 
-- Node.js 22+ (LTS)
-- pnpm 9+ (`corepack enable && corepack prepare pnpm@latest --activate`)
+- Node.js 22+ and pnpm 9+
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/kostasuser01gr/Programm-Swifts-Internaltool.git
-cd Programm-Swifts-Internaltool
+git clone <repository-url>
+cd dataos
 
-# Install all workspace dependencies (monorepo)
+# Install dependencies
 pnpm install
 
-# Copy env example
-cp .env.example .env
-# Edit .env if you want to connect to the Worker API (optional)
-```
-
-### Development (Frontend only — mock mode)
-
-```bash
-# Start the Vite dev server (http://localhost:5173)
+# Start development server (Vite SPA)
 pnpm dev
+
+# In a second terminal – start the Worker API
+cd worker && pnpm install && pnpm dev
 ```
 
-The app runs fully in mock mode out of the box — no backend needed.
-
-### Development (Frontend + Backend)
-
-```bash
-# Terminal 1: Start the Worker API (http://localhost:8787)
-cd worker && pnpm dev
-
-# Terminal 2: Start the frontend with API URL set
-VITE_API_URL=http://localhost:8787 pnpm dev
-```
-
-### Build & Verify
-
-```bash
-pnpm lint          # ESLint
-pnpm typecheck     # TypeScript strict
-pnpm test          # Vitest (103 tests)
-pnpm build         # Production build → dist/
-pnpm preview       # Preview at http://localhost:4173
-```
+The application will be available at `http://localhost:5173`
 
 ### Quick Tour
 
@@ -509,214 +461,19 @@ See `org/_org_checklist.md` for the full org-level onboarding checklist.
 
 ---
 
-## ♿ Accessibility
-
-All interactive components follow WAI-ARIA best practices:
-
-| Pattern | Where used |
-|---------|-----------|
-| `role="tablist"` / `role="tab"` / `aria-selected` | GamePage tabs, PinLogin mode selector, WasherApp view toggle |
-| `role="listbox"` / `role="option"` | Quiz answers, practice categories, station selector |
-| `role="checkbox"` / `aria-checked` | Damage toggles, inspection checklists |
-| `role="progressbar"` / `aria-valuenow` | XP bars, game timers, station wars progress |
-| `role="status"` / `role="alert"` | Toast notifications, login feedback |
-| `aria-expanded` | Expandable wash cards, inspector panels |
-| `aria-hidden="true"` | Decorative emoji / icons |
-| Semantic HTML | `<header>`, `<nav>`, `<section>`, `<article>`, `<form>`, `<label>`, `<fieldset>`, `<legend>` |
-| Focus management | Global `:focus-visible` ring (oklch), `focus-visible:ring-2` on all interactive elements |
-| Keyboard navigation | All clickable elements are `<button>` or `<a>`, never bare `<div onClick>` |
-
-### Testing Accessibility
-
-```bash
-# Run axe-core via browser devtools (free)
-# 1. Install "axe DevTools" browser extension
-# 2. Open DevTools → axe → Scan page
-# 3. Fix any remaining issues reported
-```
-
----
-
 ## 🤝 Contributing
 
 This is an enterprise demonstration project showcasing modern architecture patterns. For production use, consider:
 
-1. **Backend Implementation**: Cloudflare Workers + D1 (SQLite) backend in `worker/`
-2. **Authentication**: PBKDF2-SHA256 session-based auth with role management
+1. **Backend Implementation**: Add PostgreSQL, Redis, GraphQL server
+2. **Authentication**: Integrate Auth0, Clerk, or similar
 3. **Real-time**: Implement WebSocket with Y.js CRDT
 4. **Testing**: Add unit, integration, and E2E tests
-5. **Deployment**: Frontend on Vercel Hobby + Backend on Cloudflare Workers Free (zero cost)
+5. **Deployment**: Set up CI/CD, monitoring, logging
 
 ---
 
-## ☁️ Backend (Cloudflare Workers)
-
-The `worker/` directory contains a full REST API backend powered by **Hono** (web framework), **Cloudflare D1** (SQLite), and **KV** (rate limiting & cache). All services run on the Cloudflare Workers Free plan — **€0 always**.
-
-### Architecture
-
-| Layer           | Technology          | Free Tier Limit              |
-|-----------------|---------------------|------------------------------|
-| Web framework   | Hono v4             | —                            |
-| Database        | Cloudflare D1       | 5M reads / 100K writes / day |
-| Cache & limits  | Cloudflare KV       | 100K reads / 1K writes / day |
-| Auth            | PBKDF2 + sessions   | —                            |
-| Rate limiting   | KV-backed per-IP    | 60 req/min                   |
-
-### Fail-Closed Guards
-
-The backend enforces **fail-closed** limits at **80%** of free-tier capacity. When daily usage approaches the cap, the API returns `503 Service Limit Reached` instead of risking billing overages. Usage is tracked via KV counters and exposed in the admin dashboard.
-
-### API Endpoints
-
-```
-POST   /api/auth/register      — Create account (first user = admin)
-POST   /api/auth/login          — Login (session cookie + Bearer token)
-POST   /api/auth/logout         — End session
-GET    /api/auth/me             — Current user
-
-GET    /api/workspaces          — List workspaces
-POST   /api/workspaces          — Create workspace
-GET    /api/workspaces/:id      — Get workspace + bases
-DELETE /api/workspaces/:id      — Delete (owner only)
-
-GET    /api/tables/:id          — Table + fields + views
-GET    /api/tables/:id/records  — Paginated records (?page=&limit=)
-POST   /api/tables/:id/records  — Create record
-PATCH  /api/tables/:id/records/:rid  — Update record
-DELETE /api/tables/:id/records/:rid  — Delete record
-POST   /api/tables/:id/records/bulk-delete  — Bulk delete
-
-GET    /api/admin/users         — All users (admin)
-PATCH  /api/admin/users/:id     — Update role/status (admin)
-GET    /api/admin/audit-log     — Audit trail (admin)
-GET    /api/admin/usage         — Free-tier usage dashboard (admin)
-GET    /api/admin/stats         — System statistics (admin)
-```
-
-### Worker Setup
-
-```bash
-cd worker
-
-# Install dependencies
-pnpm install
-
-# Create D1 database
-npx wrangler d1 create dataos-db
-# Copy the database_id into wrangler.toml
-
-# Create KV namespace
-npx wrangler kv namespace create KV
-# Copy the namespace id into wrangler.toml
-
-# Run migrations
-pnpm db:migrate        # local
-pnpm db:migrate:prod   # production
-
-# Seed sample data
-pnpm db:seed           # local
-pnpm db:seed:prod      # production
-
-# Dev server (http://localhost:8787)
-pnpm dev
-
-# Deploy to Cloudflare
-pnpm deploy
-```
-
----
-
-## 🚀 Deployment (Zero Cost)
-
-### Environment Variables
-
-| Variable | Where | Required | Description |
-|----------|-------|----------|-------------|
-| `VITE_API_URL` | Frontend (.env / Vercel) | No | Worker API URL (empty = mock mode) |
-| `VITE_FEATURE_AI` | Frontend (.env / Vercel) | No | Enable AI features (default: false) |
-| `CORS_ORIGIN` | Worker (wrangler.toml / CF dashboard) | Yes | Frontend URL for CORS |
-| `CLOUDFLARE_WORKERS_TOKEN` | GitHub secret | Deploy | CF API token |
-| `CLOUDFLARE_ACCOUNT_ID` | GitHub secret | Deploy | CF account ID |
-| `VERCEL_TOKEN` | GitHub secret | Optional | Vercel CLI deploy |
-
-### Frontend → Vercel Hobby (Free)
-
-**Option A: Vercel GitHub Integration (recommended)**
-
-1. Go to [vercel.com/new](https://vercel.com/new) → Import this repo
-2. Set **Framework Preset** to **Vite**
-3. Set **Root Directory** to `/` (the repo root)
-4. Set **Build Command** to `pnpm build`
-5. Set **Output Directory** to `dist`
-6. Add env var: `VITE_API_URL` = your Worker URL
-7. Deploy — live at your Vercel domain
-
-**Option B: Vercel CLI**
-
-```bash
-npx vercel --prod
-```
-
-**Option C: GitHub Actions**
-
-See `.github/workflows/deploy-vercel.yml` — set `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` as GitHub secrets.
-
-### Backend → Cloudflare Workers (Free)
-
-```bash
-cd worker
-
-# One-time setup: create D1 database + KV namespace
-npx wrangler d1 create dataos-db
-# Copy database_id into wrangler.toml
-
-npx wrangler kv namespace create KV
-# Copy namespace id into wrangler.toml
-
-# Run migrations + seed
-pnpm db:migrate:prod
-pnpm db:seed:prod
-
-# Deploy
-pnpm deploy
-```
-
-The API will be live at `https://dataos-api.<account>.workers.dev`.
-
-### CI/CD (GitHub Actions)
-
-The CI pipeline (`.github/workflows/ci.yml`) automatically:
-
-1. **Lint** — ESLint
-2. **TypeScript** — strict type checking
-3. **Tests** — Vitest (103 unit tests)
-4. **Build** — Vite production build
-5. **E2E** — Playwright smoke tests (chromium)
-6. **Deploy Worker** — Cloudflare Workers (main branch push only)
-
-Required GitHub Secrets:
-- `CLOUDFLARE_WORKERS_TOKEN` — API token with Workers permissions
-- `CLOUDFLARE_ACCOUNT_ID` — Your Cloudflare account ID
-- `VERCEL_TOKEN` — (optional) For Vercel CLI deploys
-
----
-
-## � Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| `pnpm install` fails | Ensure pnpm 9+ and Node 22+: `corepack enable` |
-| Build warnings about chunk size | Safe to ignore — large vendor chunks are code-split |
-| Worker won't start locally | Run `cd worker && pnpm install` separately |
-| Tests fail with crypto errors | Ensure Node 22+ (Web Crypto is built-in) |
-| Vercel deploy uses wrong framework | Set Framework Preset = Vite, Output Directory = dist |
-| Can't connect frontend to Worker | Set `VITE_API_URL=http://localhost:8787` in `.env` |
-| Feature X is disabled | Check feature flags in `.env` (all OFF by default for zero cost) |
-
----
-
-## �📚 Documentation
+## 📚 Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Comprehensive technical documentation
   - System design & modules
@@ -725,7 +482,6 @@ Required GitHub Secrets:
   - Performance strategies
   - Security considerations
 - **[SECURITY.md](./SECURITY.md)** - Code scanning policy & vulnerability reporting
-- **[CHANGELOG.md](./CHANGELOG.md)** - Release history & migration notes
 - **[org/](./org/)** - Org-wide templates (reusable workflows, checklists)
 
 ---

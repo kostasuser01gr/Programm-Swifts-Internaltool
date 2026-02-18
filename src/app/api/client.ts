@@ -126,15 +126,19 @@ let authToken: string | null = null;
 
 export function setAuthToken(token: string | null) {
   authToken = token;
-  if (token) {
-    localStorage.setItem('dataos_token', token);
-  } else {
-    localStorage.removeItem('dataos_token');
+  // In production, rely on HttpOnly session cookies — never persist tokens to localStorage.
+  // In dev, localStorage is acceptable for convenience (no Secure cookie on http://localhost).
+  if (!import.meta.env.PROD) {
+    if (token) {
+      localStorage.setItem('dataos_token', token);
+    } else {
+      localStorage.removeItem('dataos_token');
+    }
   }
 }
 
 export function getAuthToken(): string | null {
-  if (!authToken) {
+  if (!authToken && !import.meta.env.PROD) {
     authToken = localStorage.getItem('dataos_token');
   }
   return authToken;

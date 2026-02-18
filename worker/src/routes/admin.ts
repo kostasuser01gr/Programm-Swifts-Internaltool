@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env, AuthContext } from '../types';
 import { generateId } from '../utils/crypto';
-import { trackUsage, getUsageSummary } from '../middleware/failClosed';
+import { getUsageSummary } from '../middleware/failClosed';
 import { adminOnly } from '../middleware/auth';
 
 type AppEnv = { Bindings: Env; Variables: { auth: AuthContext } };
@@ -14,7 +14,6 @@ admin.use('*', adminOnly());
 // ─── GET /admin/users ───────────────────────────────────────
 admin.get('/users', async (c) => {
   const env = c.env;
-  await trackUsage(env, 'd1_reads', 1);
 
   const { results } = await env.DB.prepare(
     `SELECT id, email, display_name, role, avatar_url, is_active, created_at, updated_at
@@ -84,8 +83,6 @@ admin.patch('/users/:id', async (c) => {
     )
     .run();
 
-  await trackUsage(env, 'd1_writes', 2);
-
   return c.json({ ok: true });
 });
 
@@ -95,8 +92,6 @@ admin.get('/audit-log', async (c) => {
   const url = new URL(c.req.url);
   const limit = Math.min(100, parseInt(url.searchParams.get('limit') || '50', 10));
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-
-  await trackUsage(env, 'd1_reads', 1);
 
   const { results } = await env.DB.prepare(
     `SELECT a.*, u.display_name as user_name
@@ -122,7 +117,6 @@ admin.get('/usage', async (c) => {
 // ─── GET /admin/stats ───────────────────────────────────────
 admin.get('/stats', async (c) => {
   const env = c.env;
-  await trackUsage(env, 'd1_reads', 5);
 
   const [users, workspacesCount, tablesCount, recordsCount, sessionsCount] = await Promise.all([
     env.DB.prepare('SELECT COUNT(*) as cnt FROM users').first<{ cnt: number }>(),

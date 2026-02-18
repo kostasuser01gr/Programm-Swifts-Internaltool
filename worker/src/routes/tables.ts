@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import type { Env, AuthContext } from '../types';
 import { generateId } from '../utils/crypto';
-import { validateCreateTable, validateCreateRecord, validateUpdateRecord, parsePagination } from '../utils/validate';
-import { trackUsage } from '../middleware/failClosed';
+import { validateCreateRecord, validateUpdateRecord, parsePagination } from '../utils/validate';
+import { requireTableAccess, canWrite } from '../utils/authz';
 
 type AppEnv = { Bindings: Env; Variables: { auth: AuthContext } };
 
@@ -10,10 +10,13 @@ const tables = new Hono<AppEnv>();
 
 // ─── GET /tables/:tableId ───────────────────────────────────
 tables.get('/:tableId', async (c) => {
+  const auth = c.get('auth');
   const env = c.env;
   const tableId = c.req.param('tableId');
 
-  await trackUsage(env, 'd1_reads', 3);
+  // RBAC: verify membership (returns 404 for non-members to prevent enumeration)
+  const access = await requireTableAccess(env, auth.user.id, tableId);
+  if (!access) return c.json({ ok: false, error: 'Table not found' }, 404);
 
   const table = await env.DB.prepare('SELECT * FROM tables WHERE id = ?').bind(tableId).first();
   if (!table) return c.json({ ok: false, error: 'Table not found' }, 404);
@@ -35,13 +38,15 @@ tables.get('/:tableId', async (c) => {
 
 // ─── GET /tables/:tableId/records ───────────────────────────
 tables.get('/:tableId/records', async (c) => {
+  const auth = c.get('auth');
   const env = c.env;
   const tableId = c.req.param('tableId');
   const url = new URL(c.req.url);
   const { page, limit } = parsePagination(url);
   const offset = (page - 1) * limit;
 
-  await trackUsage(env, 'd1_reads', 2);
+  const access = await requireTableAccess(env, auth.user.id, tableId);
+  if (!access) return c.json({ ok: false, error: 'Table not found' }, 404);
 
   const countRow = await env.DB.prepare(
     'SELECT COUNT(*) as total FROM records WHERE table_id = ?'
@@ -80,6 +85,13 @@ tables.post('/:tableId/records', async (c) => {
   const env = c.env;
   const tableId = c.req.param('tableId');
 
+  // RBAC: membership + write permission
+  const access = await requireTableAccess(env, auth.user.id, tableId);
+  if (!access) return c.json({ ok: false, error: 'Table not found' }, 404);
+  if (!canWrite(access.memberRole)) {
+    return c.json({ ok: false, error: 'Insufficient permissions: viewer cannot create records' }, 403);
+  }
+
   // Check record limit
   const maxRecords = parseInt(env.MAX_RECORDS_PER_TABLE, 10) || 10000;
   const countRow = await env.DB.prepare(
@@ -108,8 +120,6 @@ tables.post('/:tableId/records', async (c) => {
     .bind(generateId('aud'), auth.user.id, id, c.req.header('CF-Connecting-IP') || '')
     .run();
 
-  await trackUsage(env, 'd1_writes', 2);
-
   return c.json({ ok: true, data: { id, table_id: tableId, data: validation.data.data } }, 201);
 });
 
@@ -126,7 +136,11 @@ tables.patch('/:tableId/records/:recordId', async (c) => {
   const recordId = c.req.param('recordId');
   const tableId = c.req.param('tableId');
 
-  await trackUsage(env, 'd1_reads', 1);
+  const access = await requireTableAccess(env, auth.user.id, tableId);
+  if (!access) return c.json({ ok: false, error: 'Table not found' }, 404);
+  if (!canWrite(access.memberRole)) {
+    return c.json({ ok: false, error: 'Insufficient permissions: viewer cannot update records' }, 403);
+  }
 
   const existing = await env.DB.prepare(
     'SELECT data FROM records WHERE id = ? AND table_id = ?'
@@ -159,8 +173,6 @@ tables.patch('/:tableId/records/:recordId', async (c) => {
     )
     .run();
 
-  await trackUsage(env, 'd1_writes', 2);
-
   return c.json({ ok: true, data: { id: recordId, data: merged } });
 });
 
@@ -170,6 +182,12 @@ tables.delete('/:tableId/records/:recordId', async (c) => {
   const env = c.env;
   const recordId = c.req.param('recordId');
   const tableId = c.req.param('tableId');
+
+  const access = await requireTableAccess(env, auth.user.id, tableId);
+  if (!access) return c.json({ ok: false, error: 'Table not found' }, 404);
+  if (!canWrite(access.memberRole)) {
+    return c.json({ ok: false, error: 'Insufficient permissions: viewer cannot delete records' }, 403);
+  }
 
   const existing = await env.DB.prepare(
     'SELECT id FROM records WHERE id = ? AND table_id = ?'
@@ -188,8 +206,6 @@ tables.delete('/:tableId/records/:recordId', async (c) => {
     .bind(generateId('aud'), auth.user.id, recordId, c.req.header('CF-Connecting-IP') || '')
     .run();
 
-  await trackUsage(env, 'd1_writes', 2);
-
   return c.json({ ok: true });
 });
 
@@ -204,6 +220,12 @@ tables.post('/:tableId/records/bulk-delete', async (c) => {
   const env = c.env;
   const tableId = c.req.param('tableId');
   const ids: string[] = body.ids;
+
+  const access = await requireTableAccess(env, auth.user.id, tableId);
+  if (!access) return c.json({ ok: false, error: 'Table not found' }, 404);
+  if (!canWrite(access.memberRole)) {
+    return c.json({ ok: false, error: 'Insufficient permissions: viewer cannot delete records' }, 403);
+  }
 
   const placeholders = ids.map(() => '?').join(',');
   await env.DB.prepare(`DELETE FROM records WHERE table_id = ? AND id IN (${placeholders})`)
@@ -222,8 +244,6 @@ tables.post('/:tableId/records/bulk-delete', async (c) => {
       c.req.header('CF-Connecting-IP') || ''
     )
     .run();
-
-  await trackUsage(env, 'd1_writes', 2);
 
   return c.json({ ok: true, data: { deleted: ids.length } });
 });

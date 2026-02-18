@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import type { Env, AuthContext, User } from '../types';
 import { hashPassword, verifyPassword, generateToken, hashToken, generateId } from '../utils/crypto';
 import { validateLogin, validateRegister } from '../utils/validate';
-import { trackUsage } from '../middleware/failClosed';
 
 type AuthEnv = { Bindings: Env; Variables: { auth: AuthContext } };
 
@@ -44,8 +43,6 @@ auth.post('/register', async (c) => {
     .bind(userId, email, display_name, passwordHash, isFirstUser ? 'admin' : 'user')
     .run();
 
-  await trackUsage(env, 'd1_writes', 1);
-
   // Create session
   const token = generateToken();
   const tokenHash = await hashToken(token);
@@ -67,8 +64,6 @@ auth.post('/register', async (c) => {
   )
     .bind(generateId('aud'), userId, userId, c.req.header('CF-Connecting-IP') || '')
     .run();
-
-  await trackUsage(env, 'd1_writes', 2);
 
   // Set cookie
   const cookie = `session_token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${ttl}`;
@@ -96,8 +91,6 @@ auth.post('/login', async (c) => {
 
   const { email, password } = validation.data;
   const env = c.env;
-
-  await trackUsage(env, 'd1_reads', 1);
 
   const user = await env.DB.prepare(
     'SELECT id, email, display_name, password_hash, role, avatar_url, is_active FROM users WHERE email = ?'
@@ -146,8 +139,6 @@ auth.post('/login', async (c) => {
   )
     .bind(generateId('aud'), user.id, user.id, c.req.header('CF-Connecting-IP') || '')
     .run();
-
-  await trackUsage(env, 'd1_writes', 2);
 
   const cookie = `session_token=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${ttl}`;
 

@@ -1,0 +1,28 @@
+name = "dataos-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+ENVIRONMENT = "production"
+CORS_ORIGIN = "https://dataos.vercel.app"
+MAX_UPLOAD_SIZE_BYTES = "5242880"
+RATE_LIMIT_REQUESTS_PER_MINUTE = "60"
+RATE_LIMIT_AUTH_PER_MINUTE = "10"
+SESSION_TTL_SECONDS = "86400"
+MAX_USERS = "50"
+MAX_RECORDS_PER_TABLE = "10000"
+MAX_TABLES_PER_BASE = "20"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dataos-db"
+database_id = "REPLACE_ME"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_ME"
+
+[env.dev]
+[env.dev.vars]
+ENVIRONMENT = "development"
+CORS_ORIGIN = "http://localhost:3000"

@@ -1,115 +1,64 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router";
-import { lazy, Suspense, useState, useCallback, useEffect } from "react";
-import { PlatformShell, AppShell } from "./app/components/shell/AppShell.tsx";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router";
+import { lazy, Suspense } from "react";
+import App from "./app/App.tsx";
+import { PlatformShell } from "./app/components/shared/PlatformShell.tsx";
 import { ErrorBoundary } from "./app/components/shared/ErrorBoundary.tsx";
 import { ConnectivityMonitor } from "./app/components/shared/ConnectivityMonitor.tsx";
 import { ToastProvider } from "./app/components/shared/ToastProvider.tsx";
 import { I18nProvider } from "./app/i18n/I18nProvider.tsx";
 import { ThemeProvider } from "./app/theme/ThemeProvider.tsx";
-import { Toaster } from "./app/components/ui/sonner.tsx";
-import { CommandPalette } from "./app/components/shell/CommandPalette.tsx";
-import { useAuthBridge } from "./app/hooks/useAuthBridge.ts";
-import { QueryProvider } from "./app/api/queryProvider.tsx";
-import { validateEnv } from "./app/utils/featureFlags.ts";
+import { registerSW } from "./pwa/registerSW.ts";
 import "./styles/index.css";
 
-// ── Validate env vars at startup ──────────────────────────
-validateEnv();
+// Register service worker (moved from inline <script> to satisfy CSP)
+registerSW();
 
-// ── Lazy-loaded pages ─────────────────────────────────────
-const DashboardPage = lazy(() => import("./app/components/shell/DashboardPage.tsx"));
-const DataApp = lazy(() => import("./app/App.tsx"));
 const ChatPage = lazy(() => import("./app/components/chat/ChatPage.tsx"));
 const FleetTool = lazy(() => import("./app/components/fleet/FleetTool.tsx"));
 const WasherApp = lazy(() => import("./app/components/washer/WasherApp.tsx"));
 const WashPortal = lazy(() => import("./app/components/washer/WashPortal.tsx"));
 const SettingsPanel = lazy(() => import("./app/components/settings/SettingsPanel.tsx"));
 const GamePage = lazy(() => import("./app/components/game/GamePage.tsx"));
-const AdminPage = lazy(() => import("./app/components/shell/AdminPage.tsx"));
-const HelpPage = lazy(() => import("./app/components/shell/HelpPage.tsx"));
-const OnboardingPage = lazy(() => import("./app/components/shared/OnboardingPage.tsx"));
 
-// ── Error pages ───────────────────────────────────────────
-import { NotFoundPage } from "./app/components/shell/ErrorPages.tsx";
-
-// ── Premium loading spinner (uses theme tokens) ──────────
-const PageLoading = () => (
-  <div className="flex flex-1 items-center justify-center min-h-[50vh]">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-8 h-8 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
-      <span className="text-sm text-muted-foreground">Loading...</span>
+const Loading = ({ label = "Φόρτωση..." }: { label?: string }) => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f172a', color: '#fff', fontSize: 18 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 32, height: 32, border: '3px solid rgba(59,130,246,0.2)', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <span>{label}</span>
     </div>
   </div>
 );
 
-// ── Public routes bypass auth ─────────────────────────────
-const PUBLIC_ROUTES = ['/wash', '/onboarding'];
+// ── Public routes bypass auth (external wash crew) ──
+const PUBLIC_ROUTES = ['/wash'];
 
 function AppRoutes() {
   const location = useLocation();
   const isPublicRoute = PUBLIC_ROUTES.some(r => location.pathname.startsWith(r));
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
-
-  // Bridge API auth → platform auth (syncs user profiles)
-  useAuthBridge();
-
-  const handleCommandPalette = useCallback(() => {
-    setShowCommandPalette(true);
-  }, []);
-
-  // Global ⌘K / Ctrl+K listener
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowCommandPalette(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   if (isPublicRoute) {
     return (
       <Routes>
-        <Route path="/wash" element={<Suspense fallback={<PageLoading />}><WashPortal /></Suspense>} />
-        <Route path="/onboarding" element={<Suspense fallback={<PageLoading />}><OnboardingPage /></Suspense>} />
+        <Route path="/wash" element={<Suspense fallback={<Loading label="Φόρτωση Πλυντηρίων..." />}><WashPortal /></Suspense>} />
       </Routes>
     );
   }
 
   return (
     <PlatformShell>
-      <AppShell
-        onCommandPalette={handleCommandPalette}
-      >
-        <Suspense fallback={<PageLoading />}>
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/fleet" element={<FleetTool />} />
-            <Route path="/washer" element={<WasherApp />} />
-            <Route path="/settings" element={<SettingsPanel />} />
-            <Route path="/game" element={<GamePage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/help" element={<HelpPage />} />
-            <Route path="/data" element={<DataApp />} />
-            <Route path="/base/:baseId" element={<DataApp />} />
-            <Route path="/base/:baseId/table/:tableId" element={<DataApp />} />
-            <Route path="/base/:baseId/table/:tableId/view/:viewId" element={<DataApp />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
-      </AppShell>
-
-      {/* Global command palette */}
-      <CommandPalette
-        isOpen={showCommandPalette}
-        onClose={() => setShowCommandPalette(false)}
-      />
-
-      <Toaster />
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/chat" element={<Suspense fallback={<Loading label="Φόρτωση Chat..." />}><ChatPage /></Suspense>} />
+        <Route path="/fleet" element={<Suspense fallback={<Loading label="Φόρτωση Στόλου..." />}><FleetTool /></Suspense>} />
+        <Route path="/washer" element={<Suspense fallback={<Loading label="Φόρτωση Πλυντηρίων..." />}><WasherApp /></Suspense>} />
+        <Route path="/settings" element={<Suspense fallback={<Loading label="Φόρτωση Ρυθμίσεων..." />}><SettingsPanel /></Suspense>} />
+        <Route path="/game" element={<Suspense fallback={<Loading label="Φόρτωση Παιχνιδιού..." />}><GamePage /></Suspense>} />
+        <Route path="/base/:baseId" element={<App />} />
+        <Route path="/base/:baseId/table/:tableId" element={<App />} />
+        <Route path="/base/:baseId/table/:tableId/view/:viewId" element={<App />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </PlatformShell>
   );
 }
@@ -117,17 +66,15 @@ function AppRoutes() {
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <BrowserRouter>
-      <QueryProvider>
-        <I18nProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <ConnectivityMonitor>
-                <AppRoutes />
-              </ConnectivityMonitor>
-            </ToastProvider>
-          </ThemeProvider>
-        </I18nProvider>
-      </QueryProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <ConnectivityMonitor>
+              <AppRoutes />
+            </ConnectivityMonitor>
+          </ToastProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </BrowserRouter>
   </ErrorBoundary>
 );

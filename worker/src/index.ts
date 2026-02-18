@@ -1,94 +1,72 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { secureHeaders } from 'hono/secure-headers';
 import type { Env, AuthContext } from './types';
-import { authMiddleware } from './middleware/auth';
 import { rateLimiter, authRateLimiter } from './middleware/rateLimit';
-import { failClosedGuard } from './middleware/failClosed';
-import { logger } from './utils/logger';
-import authRoutes from './routes/auth';
-import workspaceRoutes from './routes/workspaces';
-import tableRoutes from './routes/tables';
-import adminRoutes from './routes/admin';
-
-// ─── App Setup ──────────────────────────────────────────────
+import { authMiddleware } from './middleware/auth';
+import auth from './routes/auth';
+import workspaces from './routes/workspaces';
+import tables from './routes/tables';
+import admin from './routes/admin';
 
 type AppEnv = { Bindings: Env; Variables: { auth: AuthContext } };
+
 const app = new Hono<AppEnv>();
 
-// ─── Global Middleware ──────────────────────────────────────
-
-// Security headers
-app.use('*', secureHeaders());
-
-// CORS — allow frontend origins
-app.use('*', async (c, next) => {
-  const origin = c.env.CORS_ORIGIN || '*';
-  const corsMiddleware = cors({
-    origin: origin === '*' ? '*' : origin.split(',').map((o) => o.trim()),
+// ─── CORS ───────────────────────────────────────────────────
+app.use(
+  '*',
+  cors({
+    origin: (origin, c) => c.env.CORS_ORIGIN || origin,
+    credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
     maxAge: 86400,
-  });
-  return corsMiddleware(c, next);
-});
+  })
+);
 
-// Fail-closed guard (blocks when approaching free-tier limits)
-app.use('*', failClosedGuard());
+// ─── Global rate limiter ────────────────────────────────────
+app.use('*', rateLimiter());
 
-// Rate limiting
-app.use('/api/*', rateLimiter());
+// ─── Health ─────────────────────────────────────────────────
+app.get('/api/health', (c) =>
+  c.json({ ok: true, timestamp: new Date().toISOString() })
+);
 
-// ─── Health Check ───────────────────────────────────────────
-app.get('/health', (c) => {
-  return c.json({
-    ok: true,
-    data: {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      environment: c.env.ENVIRONMENT || 'development',
-    },
-  });
-});
+// ─── Auth routes (stricter rate limit, no session required) ─
+app.use('/api/auth/*', authRateLimiter());
+app.route('/api/auth', auth);
 
-// ─── Auth Routes (public + auth rate limiter) ───────────────
-app.use('/api/auth/login', authRateLimiter());
-app.use('/api/auth/register', authRateLimiter());
-app.route('/api/auth', authRoutes);
-
-// ─── Protected Routes ───────────────────────────────────────
+// ─── Authenticated routes ───────────────────────────────────
 app.use('/api/*', authMiddleware());
+app.route('/api/workspaces', workspaces);
+app.route('/api/tables', tables);
+app.route('/api/admin', admin);
 
-// Data routes
-app.route('/api/workspaces', workspaceRoutes);
-app.route('/api/tables', tableRoutes);
-
-// Admin routes
-app.route('/api/admin', adminRoutes);
-
-// ─── 404 Fallback ───────────────────────────────────────────
-app.notFound((c) => {
-  return c.json({ ok: false, error: 'Not found' }, 404);
-});
-
-// ─── Error Handler ──────────────────────────────────────────
+// ─── Global error handler ───────────────────────────────────
 app.onError((err, c) => {
-  logger.error('Unhandled API error', {
-    message: err.message,
-    stack: err.stack,
-    path: c.req.path,
-    method: c.req.method,
-  });
+  console.error('[Worker Error]', err.message, err.stack);
+
+  // Map D1 quota errors to 503
+  if (
+    err.message?.includes('D1_ERROR') ||
+    err.message?.includes('too many requests') ||
+    err.message?.includes('quota')
+  ) {
+    return c.json(
+      { ok: false, error: 'Daily quota exceeded. Please retry after 00:00 UTC.' },
+      503
+    );
+  }
+
   return c.json(
-    {
-      type: 'https://dataos.app/problems/internal-server-error',
-      title: 'Internal Server Error',
-      status: 500,
-      detail: c.env.ENVIRONMENT === 'production' ? 'An unexpected error occurred' : err.message,
-    },
+    { ok: false, error: 'Internal server error' },
     500
   );
 });
+
+// ─── 404 fallback ───────────────────────────────────────────
+app.notFound((c) =>
+  c.json({ ok: false, error: 'Not found' }, 404)
+);
 
 export default app;
